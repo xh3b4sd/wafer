@@ -1,0 +1,6 @@
+package: github.com/xh3b4sd/wafer
+import:
+- package: github.com/giantswarm/microkit
+  subpackages:
+  - error
+- package: github.com/juju/errgo

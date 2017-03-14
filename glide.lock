@@ -1,0 +1,10 @@
+hash: f99697865f598c14bbf6b951ec581a0b40b8f06fd4319fb95664e4e187b0e421
+updated: 2017-03-14T23:46:55.686516462+01:00
+imports:
+- name: github.com/giantswarm/microkit
+  version: eddd72801c08a534e31a6d987497317c720583b0
+  subpackages:
+  - error
+- name: github.com/juju/errgo
+  version: 08cceb5d0b5331634b9826762a8fd53b29b86ad8
+testImports: []
