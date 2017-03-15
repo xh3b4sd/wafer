@@ -38,6 +38,7 @@ type Config struct {
 // by best effort.
 func DefaultConfig() Config {
 	return Config{
+		// Settings.
 		BuyIndex:     0,
 		File:         "",
 		IgnoreHeader: false,
@@ -134,7 +135,7 @@ func New(config Config) (informer.Informer, error) {
 	return newInformer, nil
 }
 
-// server manages the transport logic and endpoint registration.
+// Informer implements informer.Informer.
 type Informer struct {
 	// Internals.
 	prices chan informer.Price
