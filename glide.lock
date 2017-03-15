@@ -1,10 +1,47 @@
-hash: f99697865f598c14bbf6b951ec581a0b40b8f06fd4319fb95664e4e187b0e421
-updated: 2017-03-14T23:46:55.686516462+01:00
+hash: 641b206e3708ef67dc20f22524af766b9d821fbc69d2fb941319673b9a673acb
+updated: 2017-03-15T01:12:10.559459946+01:00
 imports:
+- name: github.com/blendlabs/go-exception
+  version: 743c4bf7eb9a27daace783577299612a7345bf09
 - name: github.com/giantswarm/microkit
   version: eddd72801c08a534e31a6d987497317c720583b0
   subpackages:
   - error
+  - logger
+- name: github.com/go-kit/kit
+  version: f66b0e13579bfc5a48b9e2a94b1209c107ea1f41
+  subpackages:
+  - endpoint
+  - log
+  - transport/http
+- name: github.com/go-logfmt/logfmt
+  version: 390ab7935ee28ec6b286364bba9b4dd6410cb3d5
+- name: github.com/go-stack/stack
+  version: 100eb0c0a9c5b306ca2fb4f165df21d80ada4b82
+- name: github.com/golang/freetype
+  version: d9be45aaf7452cc30c0ceb1b1bf7efe1d17b7c87
+  subpackages:
+  - raster
+  - truetype
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/juju/errgo
   version: 08cceb5d0b5331634b9826762a8fd53b29b86ad8
+- name: github.com/kr/logfmt
+  version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
+- name: github.com/spf13/cobra
+  version: 7be4beda01ec05d0b93d80b3facd2b6f44080d94
+- name: github.com/spf13/pflag
+  version: 5ccb023bc27df288a957c5e994cd44fd19619465
+- name: github.com/wcharczuk/go-chart
+  version: fc2973067ce43455507ea5f9aa9814aabbf8f2ca
+  subpackages:
+  - drawing
+- name: golang.org/x/image
+  version: 793f3be7dac93749dec06ae3fbe7d0ded4bdcf3d
+  subpackages:
+  - draw
+  - font
+  - math/f64
+  - math/fixed
 testImports: []

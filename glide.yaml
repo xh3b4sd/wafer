@@ -4,3 +4,5 @@ import:
   subpackages:
   - error
 - package: github.com/juju/errgo
+- package: github.com/wcharczuk/go-chart
+  version: ~2.0.0
