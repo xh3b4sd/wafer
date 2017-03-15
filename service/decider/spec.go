@@ -6,6 +6,8 @@ package decider
 
 import (
 	"time"
+
+	"github.com/xh3b4sd/wafer/service/informer"
 )
 
 // Config holds information about decider settings used to judge some market
@@ -28,7 +30,7 @@ type Decider interface {
 	// event indicates that the market is suitable to buy commodities. Once there
 	// was a buy event, a sell event must follow at some point. Two buy events
 	// without a sell event in between must never happen.
-	Buy() chan struct{}
+	Buy() chan informer.Price
 	// Config returns a copy of information about the current settings of the
 	// decider. The settings represented here must never change over the lifetime
 	// of a decider.
@@ -37,5 +39,5 @@ type Decider interface {
 	// event indicates that the market is suitable to sell commodities. Once there
 	// was a sell event, a buy event must follow at some point. Two sell events
 	// without a buy event in between must never happen.
-	Sell() chan struct{}
+	Sell() chan informer.Price
 }

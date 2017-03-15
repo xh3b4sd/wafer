@@ -1,7 +1,6 @@
 package csv
 
 import (
-	"fmt"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -72,7 +71,6 @@ func Test_New(t *testing.T) {
 				}
 
 				if !reflect.DeepEqual(price, p) {
-					fmt.Printf("%#v\n", price)
 					t.Fatal("case", i+1, "expected", p, "got", price)
 				}
 			}
