@@ -43,8 +43,10 @@ type Analyzer struct {
 	bestConfig decider.Config
 }
 
-func (a *Analyzer) Adjust(configA, configB decider.Config) decider.Config {
-	return decider.Config{}
+func (a *Analyzer) Adjust(configA, configB decider.Config) (decider.Config, error) {
+	modified := configB
+
+	return modified, nil
 }
 
 func (a *Analyzer) Config() decider.Config {

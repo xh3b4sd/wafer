@@ -5,22 +5,16 @@
 package decider
 
 import (
-	"time"
-
+	"github.com/xh3b4sd/wafer/service/decider/config/analyzer"
+	"github.com/xh3b4sd/wafer/service/decider/config/trader"
 	"github.com/xh3b4sd/wafer/service/informer"
 )
 
 // Config holds information about decider settings used to judge some market
 // situation.
 type Config struct {
-	// MaxDuration is the maximum time a single trade is allowed to take.
-	MaxDuration time.Duration
-	// MinDuration is the minimum time a single trade is allowed to take.
-	MinDuration time.Duration
-	// MaxRevenue is the maximum revenue a single trade is allowed to make.
-	MaxRevenue float64
-	// MinRevenue is the minimum revenue a single trade is allowed to make.
-	MinRevenue float64
+	Analyzer analyzer.Analyzer
+	Trader   trader.Trader
 }
 
 // Decider judges based on events to qualify if the situation at some market is
@@ -40,4 +34,7 @@ type Decider interface {
 	// was a sell event, a buy event must follow at some point. Two sell events
 	// without a buy event in between must never happen.
 	Sell() chan informer.Price
+	// Watch reads incoming prices to identify buy and sell events. Therefore
+	// Watch blocks until the given prices channel is closed.
+	Watch(prices chan informer.Price)
 }

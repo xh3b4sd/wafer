@@ -10,7 +10,7 @@ type Analyzer interface {
 	// returns the modified version. Adjust is given two consecutive decider
 	// configurations as calculated via Iterate. Therefore Adjust must modify the
 	// second decider configuration according to the first one.
-	Adjust(configA, configB decider.Config) decider.Config
+	Adjust(configA, configB decider.Config) (decider.Config, error)
 	// Config returns the decider configuration producing the best known
 	// performance.
 	Config() decider.Config
