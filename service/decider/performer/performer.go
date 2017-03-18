@@ -85,7 +85,7 @@ func (d *Decider) Sell() chan informer.Price {
 }
 
 func (d *Decider) Watch(prices chan informer.Price) {
-	emptyPrice := informer.Price{}
+	var emptyPrice informer.Price
 
 	for price := range prices {
 		// We want to coordinate our research through the price event history using
@@ -107,15 +107,21 @@ func (d *Decider) Watch(prices chan informer.Price) {
 
 func (d *Decider) watch(price informer.Price) error {
 	var err error
-
-	d.window = append(d.window, price)
-
-	d.window, err = calculateWindow(d.window, d.config.Analyzer.Chart.Window)
+	d.window, err = calculateWindow(append(d.window, price), d.config.Analyzer.Chart.Window)
 	if err != nil {
 		return microerror.MaskAny(err)
 	}
-	// calc chart view
-	// calc chart checkpoint
+
+	views, err := calculateViews(d.window, d.config.Analyzer.Chart.View, d.config.Analyzer.Chart.Convolution)
+	if IsNotEnoughData(err) {
+		// In case there is not enough data yet, we cannot continue with the chart
+		// analyzation. So we return here and wait for the next events and proceed
+		// later, as soon as there is enough data for our algorithm.
+		return nil
+	} else if err != nil {
+		return microerror.MaskAny(err)
+	}
+	fmt.Printf("%#v\n", views)
 
 	// if buy event
 	//     calc chart surge
