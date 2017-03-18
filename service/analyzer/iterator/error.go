@@ -1,4 +1,4 @@
-package iterator
+package iteration
 
 import (
 	"github.com/juju/errgo"

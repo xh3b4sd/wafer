@@ -1,4 +1,4 @@
-package performer
+package performance
 
 import (
 	"fmt"
@@ -123,19 +123,21 @@ func (d *Decider) watch(price informer.Price) error {
 	}
 	fmt.Printf("%#v\n", views)
 
-	// if buy event
-	//     calc chart surge
-	//     if chart surge big enough
-	//         buy
-	//     if chart surge NOT big enough
-	//         do nothing
-
-	// if sell event
-	//     calc revenue
-	//     if revenue big enough
-	//         sell
-	//     if revenue NOT big enough
-	//         do nothing
+	if d.buyEvent {
+		// if buy event
+		//     calc chart surge
+		//     if chart surge big enough
+		//         buy
+		//     if chart surge NOT big enough
+		//         do nothing
+	} else {
+		// if sell event
+		//     calc revenue
+		//     if revenue big enough
+		//         sell
+		//     if revenue NOT big enough
+		//         do nothing
+	}
 
 	return nil
 }

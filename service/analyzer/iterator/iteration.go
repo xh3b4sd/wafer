@@ -1,4 +1,4 @@
-package iterator
+package iteration
 
 import (
 	microerror "github.com/giantswarm/microkit/error"

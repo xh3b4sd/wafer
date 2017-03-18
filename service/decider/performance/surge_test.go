@@ -1,4 +1,4 @@
-package performer
+package performance
 
 import (
 	"testing"
