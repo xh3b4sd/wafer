@@ -1,5 +1,5 @@
 hash: 641b206e3708ef67dc20f22524af766b9d821fbc69d2fb941319673b9a673acb
-updated: 2017-03-15T01:12:10.559459946+01:00
+updated: 2017-03-19T00:31:53.25512068+01:00
 imports:
 - name: github.com/blendlabs/go-exception
   version: 743c4bf7eb9a27daace783577299612a7345bf09
@@ -38,7 +38,7 @@ imports:
   subpackages:
   - drawing
 - name: golang.org/x/image
-  version: 793f3be7dac93749dec06ae3fbe7d0ded4bdcf3d
+  version: 6847effb9b768b10e85aae2c552c93fefa93c30a
   subpackages:
   - draw
   - font
