@@ -2,6 +2,7 @@ package performance
 
 import (
 	"fmt"
+	"math"
 
 	microerror "github.com/giantswarm/microkit/error"
 	micrologger "github.com/giantswarm/microkit/logger"
@@ -47,12 +48,12 @@ func New(config Config) (decider.Decider, error) {
 
 	newAnalyzer := &Decider{
 		// Internals.
-		buyChan:    make(chan informer.Price, 10),
-		buyEvent:   true,
-		checkpoint: informer.Price{},
-		config:     config.DeciderConfig,
-		sellChan:   make(chan informer.Price, 10),
-		window:     []informer.Price{},
+		buyChan:  make(chan informer.Price, 10),
+		buyEvent: true,
+		buyPrice: informer.Price{},
+		config:   config.DeciderConfig,
+		sellChan: make(chan informer.Price, 10),
+		window:   []informer.Price{},
 	}
 
 	return newAnalyzer, nil
@@ -64,12 +65,12 @@ type Decider struct {
 	logger micrologger.Logger
 
 	// Internals.
-	buyChan    chan informer.Price
-	buyEvent   bool
-	checkpoint informer.Price
-	config     decider.Config
-	sellChan   chan informer.Price
-	window     []informer.Price
+	buyChan  chan informer.Price
+	buyEvent bool
+	buyPrice informer.Price
+	config   decider.Config
+	sellChan chan informer.Price
+	window   []informer.Price
 }
 
 func (d *Decider) Buy() chan informer.Price {
@@ -85,23 +86,11 @@ func (d *Decider) Sell() chan informer.Price {
 }
 
 func (d *Decider) Watch(prices chan informer.Price) {
-	var emptyPrice informer.Price
-
 	for price := range prices {
-		// We want to coordinate our research through the price event history using
-		// checkpoints. The first checkpoint has to be defined by the first price
-		// event of the given queue. In case our internal checkpoint is empty, we
-		// know we receive the very first event and assign it.
-		if d.checkpoint == emptyPrice {
-			d.checkpoint = price
+		err := d.watch(price)
+		if err != nil {
+			d.logger.Log("error", fmt.Sprintf("%#v", err))
 		}
-
-		go func(price informer.Price) {
-			err := d.watch(price)
-			if err != nil {
-				d.logger.Log("error", fmt.Sprintf("%#v", err))
-			}
-		}(price)
 	}
 }
 
@@ -121,23 +110,111 @@ func (d *Decider) watch(price informer.Price) error {
 	} else if err != nil {
 		return microerror.MaskAny(err)
 	}
-	fmt.Printf("%#v\n", views)
 
 	if d.buyEvent {
-		// if buy event
-		//     calc chart surge
-		//     if chart surge big enough
-		//         buy
-		//     if chart surge NOT big enough
-		//         do nothing
+		surges := viewsToSurges(views)
+		surges = findLastSurge(surges)
+
+		if surgeAverage(surges) < d.config.Analyzer.Surge.Min {
+			return nil
+		}
+
+		d.buyChan <- price
+		d.buyEvent = false
+		d.buyPrice = price
 	} else {
-		// if sell event
-		//     calc revenue
-		//     if revenue big enough
-		//         sell
-		//     if revenue NOT big enough
-		//         do nothing
+		revenue := calculateRevenue(d.buyPrice.Buy, price.Sell, d.config.Trader.Fee.Min)
+		if revenue < d.config.Trader.Revenue.Min {
+			return nil
+		}
+
+		d.sellChan <- price
+		d.buyEvent = true
+		d.buyPrice = informer.Price{}
 	}
 
 	return nil
+}
+
+// calculateRevenue takes the buy price and the current sell price to calculate
+// the possible revenue with respect to some configured fee. The resulting
+// floating point number is a percentage representation of the probable revenue
+// based on the prise raise according to the original buy price.
+func calculateRevenue(buyPrice, currentPrice, fee float64) float64 {
+	total := currentPrice - buyPrice
+	percentage := total * 100 / buyPrice
+	withoutFee := percentage - fee
+
+	if math.IsNaN(withoutFee) {
+		return 0
+	}
+
+	return withoutFee
+}
+
+// TODO add configuration for tolerated surge burst
+func findLastSurge(surges []Surge) []Surge {
+	var n int
+	var prevSurge Surge
+
+	reversedSurges := reverse(surges)
+	for i, s := range reversedSurges {
+		if i == 0 || s.Angle < prevSurge.Angle {
+			n = i
+			prevSurge = s
+			continue
+		}
+
+		break
+	}
+	reversedSurges = reversedSurges[:n+1]
+
+	lastSurges := reverse(reversedSurges)
+
+	if len(lastSurges) < 2 {
+		return []Surge{}
+	}
+
+	return lastSurges
+}
+
+func reverse(list []Surge) []Surge {
+	newList := make([]Surge, len(list))
+	copy(newList, list)
+
+	for i, j := 0, len(newList)-1; i < j; i, j = i+1, j-1 {
+		newList[i], newList[j] = newList[j], newList[i]
+	}
+
+	return newList
+}
+
+func surgeAverage(list []Surge) float64 {
+	var total float64
+
+	for _, i := range list {
+		total += i.Angle
+	}
+
+	average := total / float64(len(list))
+
+	return average
+}
+
+func viewsToSurges(views []View) []Surge {
+	var surges []Surge
+
+	for _, v := range views {
+		angle := calculateSurge(float64(v.LeftBound.Time.Unix()), v.LeftBound.Buy, float64(v.RightBound.Time.Unix()), v.RightBound.Buy)
+
+		surge := Surge{
+			Angle:      angle,
+			LeftBound:  v.LeftBound.Time,
+			RightBound: v.RightBound.Time,
+		}
+
+		surges = append(surges, surge)
+	}
+
+	return surges
 }

@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func Test_surge(t *testing.T) {
+func Test_calculateSurge(t *testing.T) {
 	testCases := []struct {
 		X1       float64
 		Y1       float64
@@ -64,7 +64,7 @@ func Test_surge(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		expected := Surge(testCase.X1, testCase.Y1, testCase.X2, testCase.Y2)
+		expected := calculateSurge(testCase.X1, testCase.Y1, testCase.X2, testCase.Y2)
 		if expected != testCase.Expected {
 			t.Fatal("case", i+1, "expected", testCase.Expected, "got", expected)
 		}

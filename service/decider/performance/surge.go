@@ -2,12 +2,19 @@ package performance
 
 import (
 	"math"
+	"time"
 )
 
-// Surge calculates the tangent of the imaginary rectengular triangle defined by
-// the given coordinates. In case the surge is negative the angle is mutlipled
-// by -1 to get its negative representation.
-func Surge(x1, y1, x2, y2 float64) float64 {
+type Surge struct {
+	Angle      float64
+	LeftBound  time.Time
+	RightBound time.Time
+}
+
+// calculateSurge calculates the tangent of the imaginary rectengular triangle
+// defined by the given coordinates. In case the surge is negative the angle is
+// mutlipled by -1 to get its negative representation.
+func calculateSurge(x1, y1, x2, y2 float64) float64 {
 	opposite := float64(y2 - y1)
 	adjacent := float64(x2 - x1)
 	atangent := math.Atan(opposite / adjacent)
