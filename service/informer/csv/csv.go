@@ -63,11 +63,10 @@ func New(config Config) (informer.Informer, error) {
 		return nil, microerror.MaskAnyf(invalidConfigError, "config.File must not be empty")
 	}
 
-	prices := make(chan informer.Price, 10)
-
 	// Read the CSV file.
 	var fields [][]string
 	{
+		// TODO this should be abstracted with some more decent interface.
 		csvFile, err := os.Open(config.File)
 		if err != nil {
 			return nil, microerror.MaskAny(err)
@@ -93,6 +92,8 @@ func New(config Config) (informer.Informer, error) {
 			return nil, microerror.MaskAnyf(invalidConfigError, "config.TimeIndex out of range")
 		}
 	}
+
+	var prices []informer.Price
 
 	// Fill the prices channel.
 	{
@@ -120,10 +121,9 @@ func New(config Config) (informer.Informer, error) {
 					Sell: s,
 					Time: time.Unix(t, 0),
 				}
-				prices <- price
-			}
 
-			close(prices)
+				prices = append(prices, price)
+			}
 		}()
 	}
 
@@ -138,7 +138,7 @@ func New(config Config) (informer.Informer, error) {
 // Informer implements informer.Informer.
 type Informer struct {
 	// Internals.
-	prices chan informer.Price
+	prices []informer.Price
 }
 
 // Prices returns a price channel with price events holding buy and sell prices
@@ -146,5 +146,12 @@ type Informer struct {
 // parsed as float64 and the CSV informer assumes the timestamp is a usual unix
 // timestamp in seconds.
 func (i *Informer) Prices() chan informer.Price {
-	return i.prices
+	prices := make(chan informer.Price, 10)
+	defer close(prices)
+
+	for _, p := range i.prices {
+		prices <- p
+	}
+
+	return prices
 }
