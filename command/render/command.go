@@ -120,6 +120,16 @@ func drawChart(res http.ResponseWriter, req *http.Request) {
 	}
 
 	graph := chart.Chart{
+		XAxis: chart.XAxis{
+			Name:      "time in seconds",
+			NameStyle: chart.StyleShow(),
+			Style:     chart.StyleShow(),
+		},
+		YAxis: chart.YAxis{
+			Name:      "price in USD",
+			NameStyle: chart.StyleShow(),
+			Style:     chart.StyleShow(),
+		},
 		Series: []chart.Series{
 			chart.ContinuousSeries{
 				XValues: xValues,

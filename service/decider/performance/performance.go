@@ -18,7 +18,6 @@ type Config struct {
 
 	// Settings.
 	DeciderConfig decider.Config
-	Foo           string
 }
 
 // DefaultConfig returns the default configuration used to create a new decider
@@ -30,7 +29,6 @@ func DefaultConfig() Config {
 
 		// Settings.
 		DeciderConfig: decider.Config{},
-		Foo:           "",
 	}
 }
 
@@ -41,12 +39,10 @@ func New(config Config) (decider.Decider, error) {
 		return nil, microerror.MaskAnyf(invalidConfigError, "logger must not be empty")
 	}
 
-	// Settings.
-	if config.Foo == "" {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.Foo must not be empty")
-	}
-
 	newAnalyzer := &Decider{
+		// Dependencies.
+		logger: config.Logger,
+
 		// Internals.
 		buyChan:  make(chan informer.Price, 10),
 		buyEvent: true,
@@ -96,12 +92,9 @@ func (d *Decider) Watch(prices chan informer.Price) {
 
 func (d *Decider) watch(price informer.Price) error {
 	var err error
-	d.window, err = calculateWindow(append(d.window, price), d.config.Analyzer.Chart.Window)
-	if err != nil {
-		return microerror.MaskAny(err)
-	}
 
-	views, err := calculateViews(d.window, d.config.Analyzer.Chart.View, d.config.Analyzer.Chart.Convolution)
+	d.window = append(d.window, price)
+	d.window, err = calculateWindow(d.window, d.config.Analyzer.Chart.Window)
 	if IsNotEnoughData(err) {
 		// In case there is not enough data yet, we cannot continue with the chart
 		// analyzation. So we return here and wait for the next events and proceed
@@ -112,10 +105,11 @@ func (d *Decider) watch(price informer.Price) error {
 	}
 
 	if d.buyEvent {
-		surges := viewsToSurges(views)
-		surges = findLastSurge(surges)
+		prices := findLastSurge(d.window)
+		surge := calculateSurgeAverage(prices)
 
-		if surgeAverage(surges) < d.config.Analyzer.Surge.Min {
+		// TODO find out why surge is 2.5 and not 45
+		if surge < d.config.Analyzer.Surge.Min {
 			return nil
 		}
 
@@ -125,6 +119,11 @@ func (d *Decider) watch(price informer.Price) error {
 	} else {
 		revenue := calculateRevenue(d.buyPrice.Buy, price.Sell, d.config.Trader.Fee.Min)
 		if revenue < d.config.Trader.Revenue.Min {
+			return nil
+		}
+
+		duration := price.Time.Sub(d.buyPrice.Time)
+		if duration < d.config.Trader.Duration.Min {
 			return nil
 		}
 
@@ -152,14 +151,31 @@ func calculateRevenue(buyPrice, currentPrice, fee float64) float64 {
 	return withoutFee
 }
 
-// TODO add configuration for tolerated surge burst
-func findLastSurge(surges []Surge) []Surge {
-	var n int
-	var prevSurge Surge
+func calculateSurgeAverage(list []informer.Price) float64 {
+	if len(list) < 2 {
+		return 0
+	}
 
-	reversedSurges := reverse(surges)
+	leftBound := list[0]
+	rightBound := list[len(list)-1]
+
+	surge := calculateSurge(float64(leftBound.Time.Unix()), leftBound.Buy, float64(rightBound.Time.Unix()), rightBound.Buy)
+
+	return surge
+}
+
+// TODO add configuration for tolerated surge burst
+func findLastSurge(prices []informer.Price) []informer.Price {
+	if len(prices) < 2 {
+		return []informer.Price{}
+	}
+
+	var n int
+	var prevSurge informer.Price
+
+	reversedSurges := reverse(prices)
 	for i, s := range reversedSurges {
-		if i == 0 || s.Angle < prevSurge.Angle {
+		if i == 0 || s.Buy < prevSurge.Buy {
 			n = i
 			prevSurge = s
 			continue
@@ -172,14 +188,14 @@ func findLastSurge(surges []Surge) []Surge {
 	lastSurges := reverse(reversedSurges)
 
 	if len(lastSurges) < 2 {
-		return []Surge{}
+		return []informer.Price{}
 	}
 
 	return lastSurges
 }
 
-func reverse(list []Surge) []Surge {
-	newList := make([]Surge, len(list))
+func reverse(list []informer.Price) []informer.Price {
+	newList := make([]informer.Price, len(list))
 	copy(newList, list)
 
 	for i, j := 0, len(newList)-1; i < j; i, j = i+1, j-1 {
@@ -187,34 +203,4 @@ func reverse(list []Surge) []Surge {
 	}
 
 	return newList
-}
-
-func surgeAverage(list []Surge) float64 {
-	var total float64
-
-	for _, i := range list {
-		total += i.Angle
-	}
-
-	average := total / float64(len(list))
-
-	return average
-}
-
-func viewsToSurges(views []View) []Surge {
-	var surges []Surge
-
-	for _, v := range views {
-		angle := calculateSurge(float64(v.LeftBound.Time.Unix()), v.LeftBound.Buy, float64(v.RightBound.Time.Unix()), v.RightBound.Buy)
-
-		surge := Surge{
-			Angle:      angle,
-			LeftBound:  v.LeftBound.Time,
-			RightBound: v.RightBound.Time,
-		}
-
-		surges = append(surges, surge)
-	}
-
-	return surges
 }

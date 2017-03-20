@@ -7,10 +7,8 @@ import (
 // Analyzer automatically calculates the best performing decider configuration.
 type Analyzer interface {
 	// Adjust modifies the given decider configuration by a small degree and
-	// returns the modified version. Adjust is given two consecutive decider
-	// configurations as calculated via Iterate. Therefore Adjust must modify the
-	// second decider configuration according to the first one.
-	Adjust(configA, configB decider.Config) (decider.Config, error)
+	// returns the modified version.
+	Adjust(config decider.Config) (decider.Config, error)
 	// Config returns the decider configuration producing the best known
 	// performance.
 	Config() decider.Config
@@ -19,4 +17,6 @@ type Analyzer interface {
 	// can be used to call Iterate again to further optimize the decider
 	// configuration.
 	Iterate(config decider.Config) (decider.Config, error)
+	// Revenue returns the best revenue produced by the analyzer so far.
+	Revenue() float64
 }

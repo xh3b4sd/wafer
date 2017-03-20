@@ -7,6 +7,7 @@ import (
 	microerror "github.com/giantswarm/microkit/error"
 	micrologger "github.com/giantswarm/microkit/logger"
 
+	"github.com/xh3b4sd/wafer/command/analyze"
 	"github.com/xh3b4sd/wafer/command/render"
 	"github.com/xh3b4sd/wafer/command/version"
 )
@@ -42,6 +43,18 @@ func DefaultConfig() Config {
 func New(config Config) (*Command, error) {
 	var err error
 
+	var analyzeCommand *analyze.Command
+	{
+		analyzeConfig := analyze.DefaultConfig()
+
+		analyzeConfig.Logger = config.Logger
+
+		analyzeCommand, err = analyze.New(analyzeConfig)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
+	}
+
 	var renderCommand *render.Command
 	{
 		renderConfig := render.DefaultConfig()
@@ -71,6 +84,7 @@ func New(config Config) (*Command, error) {
 
 	newCommand := &Command{
 		// Internals.
+		analyzeCommand: analyzeCommand,
 		cobraCommand:   nil,
 		renderCommand:  renderCommand,
 		versionCommand: versionCommand,
@@ -83,6 +97,7 @@ func New(config Config) (*Command, error) {
 		Run:   newCommand.Execute,
 	}
 
+	newCommand.cobraCommand.AddCommand(newCommand.analyzeCommand.CobraCommand())
 	newCommand.cobraCommand.AddCommand(newCommand.renderCommand.CobraCommand())
 	newCommand.cobraCommand.AddCommand(newCommand.versionCommand.CobraCommand())
 
@@ -91,9 +106,14 @@ func New(config Config) (*Command, error) {
 
 type Command struct {
 	// Internals.
+	analyzeCommand *analyze.Command
 	cobraCommand   *cobra.Command
 	renderCommand  *render.Command
 	versionCommand *version.Command
+}
+
+func (c *Command) AnalyzeCommand() *analyze.Command {
+	return c.analyzeCommand
 }
 
 func (c *Command) CobraCommand() *cobra.Command {

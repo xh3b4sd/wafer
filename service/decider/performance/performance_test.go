@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/xh3b4sd/wafer/service/informer"
 )
 
 func Test_calculateRevenue(t *testing.T) {
@@ -48,79 +50,73 @@ func Test_calculateRevenue(t *testing.T) {
 
 func Test_findLastSurge(t *testing.T) {
 	testCases := []struct {
-		Surges   []Surge
-		Expected []Surge
+		Prices   []informer.Price
+		Expected []informer.Price
 	}{
 		{
-			Surges: []Surge{
-				{Angle: float64(10), LeftBound: time.Unix(1, 0), RightBound: time.Unix(2, 0)},
-				{Angle: float64(20), LeftBound: time.Unix(3, 0), RightBound: time.Unix(4, 0)},
-				{Angle: float64(30), LeftBound: time.Unix(5, 0), RightBound: time.Unix(6, 0)},
-				{Angle: float64(40), LeftBound: time.Unix(7, 0), RightBound: time.Unix(8, 0)},
-				{Angle: float64(10), LeftBound: time.Unix(9, 0), RightBound: time.Unix(10, 0)},
-				{Angle: float64(20), LeftBound: time.Unix(11, 0), RightBound: time.Unix(12, 0)},
-				{Angle: float64(30), LeftBound: time.Unix(13, 0), RightBound: time.Unix(14, 0)},
-				{Angle: float64(40), LeftBound: time.Unix(15, 0), RightBound: time.Unix(16, 0)},
+			Prices:   []informer.Price{},
+			Expected: []informer.Price{},
+		},
+		{
+			Prices: []informer.Price{
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(1, 0)},
+				{Buy: 20.0, Sell: 20.0, Time: time.Unix(2, 0)},
+				{Buy: 30.0, Sell: 30.0, Time: time.Unix(3, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(4, 0)},
+				{Buy: 20.0, Sell: 20.0, Time: time.Unix(5, 0)},
+				{Buy: 30.0, Sell: 30.0, Time: time.Unix(6, 0)},
 			},
-			Expected: []Surge{
-				{Angle: float64(10), LeftBound: time.Unix(9, 0), RightBound: time.Unix(10, 0)},
-				{Angle: float64(20), LeftBound: time.Unix(11, 0), RightBound: time.Unix(12, 0)},
-				{Angle: float64(30), LeftBound: time.Unix(13, 0), RightBound: time.Unix(14, 0)},
-				{Angle: float64(40), LeftBound: time.Unix(15, 0), RightBound: time.Unix(16, 0)},
+			Expected: []informer.Price{
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(4, 0)},
+				{Buy: 20.0, Sell: 20.0, Time: time.Unix(5, 0)},
+				{Buy: 30.0, Sell: 30.0, Time: time.Unix(6, 0)},
 			},
 		},
 		{
-			Surges: []Surge{
-				{Angle: float64(10), LeftBound: time.Unix(1, 0), RightBound: time.Unix(2, 0)},
-				{Angle: float64(20), LeftBound: time.Unix(3, 0), RightBound: time.Unix(4, 0)},
-				{Angle: float64(30), LeftBound: time.Unix(5, 0), RightBound: time.Unix(6, 0)},
-				{Angle: float64(40), LeftBound: time.Unix(7, 0), RightBound: time.Unix(8, 0)},
-				{Angle: float64(10), LeftBound: time.Unix(9, 0), RightBound: time.Unix(10, 0)},
-				{Angle: float64(25), LeftBound: time.Unix(11, 0), RightBound: time.Unix(12, 0)},
-				{Angle: float64(50), LeftBound: time.Unix(13, 0), RightBound: time.Unix(14, 0)},
-				{Angle: float64(90), LeftBound: time.Unix(15, 0), RightBound: time.Unix(16, 0)},
+			Prices: []informer.Price{
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(1, 0)},
+				{Buy: 20.0, Sell: 20.0, Time: time.Unix(2, 0)},
+				{Buy: 30.0, Sell: 30.0, Time: time.Unix(3, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(4, 0)},
+				{Buy: 40.0, Sell: 40.0, Time: time.Unix(5, 0)},
+				{Buy: 90.0, Sell: 90.0, Time: time.Unix(6, 0)},
 			},
-			Expected: []Surge{
-				{Angle: float64(10), LeftBound: time.Unix(9, 0), RightBound: time.Unix(10, 0)},
-				{Angle: float64(25), LeftBound: time.Unix(11, 0), RightBound: time.Unix(12, 0)},
-				{Angle: float64(50), LeftBound: time.Unix(13, 0), RightBound: time.Unix(14, 0)},
-				{Angle: float64(90), LeftBound: time.Unix(15, 0), RightBound: time.Unix(16, 0)},
+			Expected: []informer.Price{
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(4, 0)},
+				{Buy: 40.0, Sell: 40.0, Time: time.Unix(5, 0)},
+				{Buy: 90.0, Sell: 90.0, Time: time.Unix(6, 0)},
 			},
 		},
 		{
-			Surges: []Surge{
-				{Angle: float64(10), LeftBound: time.Unix(1, 0), RightBound: time.Unix(2, 0)},
-				{Angle: float64(10), LeftBound: time.Unix(3, 0), RightBound: time.Unix(4, 0)},
-				{Angle: float64(10), LeftBound: time.Unix(5, 0), RightBound: time.Unix(6, 0)},
-				{Angle: float64(10), LeftBound: time.Unix(7, 0), RightBound: time.Unix(8, 0)},
-				{Angle: float64(10), LeftBound: time.Unix(9, 0), RightBound: time.Unix(10, 0)},
-				{Angle: float64(10), LeftBound: time.Unix(11, 0), RightBound: time.Unix(12, 0)},
-				{Angle: float64(50), LeftBound: time.Unix(13, 0), RightBound: time.Unix(14, 0)},
-				{Angle: float64(90), LeftBound: time.Unix(15, 0), RightBound: time.Unix(16, 0)},
+			Prices: []informer.Price{
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(1, 0)},
+				{Buy: 10.0, Sell: 20.0, Time: time.Unix(2, 0)},
+				{Buy: 10.0, Sell: 30.0, Time: time.Unix(3, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(4, 0)},
+				{Buy: 40.0, Sell: 40.0, Time: time.Unix(5, 0)},
+				{Buy: 90.0, Sell: 90.0, Time: time.Unix(6, 0)},
 			},
-			Expected: []Surge{
-				{Angle: float64(10), LeftBound: time.Unix(11, 0), RightBound: time.Unix(12, 0)},
-				{Angle: float64(50), LeftBound: time.Unix(13, 0), RightBound: time.Unix(14, 0)},
-				{Angle: float64(90), LeftBound: time.Unix(15, 0), RightBound: time.Unix(16, 0)},
+			Expected: []informer.Price{
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(4, 0)},
+				{Buy: 40.0, Sell: 40.0, Time: time.Unix(5, 0)},
+				{Buy: 90.0, Sell: 90.0, Time: time.Unix(6, 0)},
 			},
 		},
 		{
-			Surges: []Surge{
-				{Angle: float64(90), LeftBound: time.Unix(1, 0), RightBound: time.Unix(2, 0)},
-				{Angle: float64(80), LeftBound: time.Unix(3, 0), RightBound: time.Unix(4, 0)},
-				{Angle: float64(70), LeftBound: time.Unix(5, 0), RightBound: time.Unix(6, 0)},
-				{Angle: float64(60), LeftBound: time.Unix(7, 0), RightBound: time.Unix(8, 0)},
-				{Angle: float64(50), LeftBound: time.Unix(9, 0), RightBound: time.Unix(10, 0)},
-				{Angle: float64(40), LeftBound: time.Unix(11, 0), RightBound: time.Unix(12, 0)},
-				{Angle: float64(10), LeftBound: time.Unix(13, 0), RightBound: time.Unix(14, 0)},
-				{Angle: float64(10), LeftBound: time.Unix(15, 0), RightBound: time.Unix(16, 0)},
+			Prices: []informer.Price{
+				{Buy: 90.0, Sell: 90.0, Time: time.Unix(1, 0)},
+				{Buy: 40.0, Sell: 40.0, Time: time.Unix(2, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(3, 0)},
+				{Buy: 10.0, Sell: 20.0, Time: time.Unix(4, 0)},
+				{Buy: 10.0, Sell: 30.0, Time: time.Unix(5, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(6, 0)},
 			},
-			Expected: []Surge{},
+			Expected: []informer.Price{},
 		},
 	}
 
 	for i, testCase := range testCases {
-		expected := findLastSurge(testCase.Surges)
+		expected := findLastSurge(testCase.Prices)
 		if !reflect.DeepEqual(expected, testCase.Expected) {
 			t.Fatal("case", i+1, "expected", testCase.Expected, "got", expected)
 		}
