@@ -1,6 +1,8 @@
 package analyzer
 
 import (
+	"bytes"
+
 	"github.com/xh3b4sd/wafer/service/decider"
 )
 
@@ -17,6 +19,9 @@ type Analyzer interface {
 	// can be used to call Iterate again to further optimize the decider
 	// configuration.
 	Iterate(config decider.Config) (decider.Config, error)
+	// Render returns a buffer containing the rendered data of a chart's PNG
+	// image.
+	Render() *bytes.Buffer
 	// Revenue returns the best revenue produced by the analyzer so far.
 	Revenue() float64
 }

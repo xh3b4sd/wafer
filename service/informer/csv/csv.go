@@ -101,30 +101,28 @@ func New(config Config) (informer.Informer, error) {
 			fields = fields[1:]
 		}
 
-		go func() {
-			for _, fs := range fields {
-				b, err := strconv.ParseFloat(fs[config.BuyIndex], 64)
-				if err != nil {
-					panic(err)
-				}
-				s, err := strconv.ParseFloat(fs[config.SellIndex], 64)
-				if err != nil {
-					panic(err)
-				}
-				t, err := strconv.ParseInt(fs[config.TimeIndex], 10, 64)
-				if err != nil {
-					panic(err)
-				}
-
-				price := informer.Price{
-					Buy:  b,
-					Sell: s,
-					Time: time.Unix(t, 0),
-				}
-
-				prices = append(prices, price)
+		for _, fs := range fields {
+			b, err := strconv.ParseFloat(fs[config.BuyIndex], 64)
+			if err != nil {
+				panic(err)
 			}
-		}()
+			s, err := strconv.ParseFloat(fs[config.SellIndex], 64)
+			if err != nil {
+				panic(err)
+			}
+			t, err := strconv.ParseInt(fs[config.TimeIndex], 10, 64)
+			if err != nil {
+				panic(err)
+			}
+
+			price := informer.Price{
+				Buy:  b,
+				Sell: s,
+				Time: time.Unix(t, 0),
+			}
+
+			prices = append(prices, price)
+		}
 	}
 
 	newInformer := &Informer{
@@ -147,11 +145,13 @@ type Informer struct {
 // timestamp in seconds.
 func (i *Informer) Prices() chan informer.Price {
 	prices := make(chan informer.Price, 10)
-	defer close(prices)
 
-	for _, p := range i.prices {
-		prices <- p
-	}
+	go func() {
+		for _, p := range i.prices {
+			prices <- p
+		}
+		close(prices)
+	}()
 
 	return prices
 }

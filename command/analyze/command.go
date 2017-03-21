@@ -3,6 +3,7 @@ package analyze
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -95,6 +96,13 @@ func (c *Command) Execute(cmd *cobra.Command, args []string) {
 }
 
 func (c *Command) execute() error {
+	http.HandleFunc("/", c.drawChart)
+	http.ListenAndServe(":8000", nil)
+
+	return nil
+}
+
+func (c *Command) drawChart(res http.ResponseWriter, req *http.Request) {
 	var err error
 
 	var newInformer informer.Informer
@@ -107,7 +115,7 @@ func (c *Command) execute() error {
 		config.TimeIndex = f.Index.Time
 		newInformer, err = csv.New(config)
 		if err != nil {
-			return microerror.MaskAny(err)
+			panic(err)
 		}
 	}
 
@@ -118,7 +126,7 @@ func (c *Command) execute() error {
 		config.Logger = c.logger
 		newAnalyzer, err = iteration.New(config)
 		if err != nil {
-			return microerror.MaskAny(err)
+			panic(err)
 		}
 	}
 
@@ -130,13 +138,19 @@ func (c *Command) execute() error {
 		initialConfig.Trader.Fee.Min = 4
 		initialConfig.Trader.Revenue.Min = 2
 
+		c.logger.Log("debug", "analyzer iterating")
 		_, err := newAnalyzer.Iterate(initialConfig)
 		if err != nil {
-			return microerror.MaskAny(err)
+			panic(err)
 		}
 
-		fmt.Printf("%#v\n", newAnalyzer.Revenue())
-	}
+		c.logger.Log("debug", "analyzer rendering")
+		buf := newAnalyzer.Render()
 
-	return nil
+		c.logger.Log("debug", "analyzer responding")
+		res.Header().Set(http.CanonicalHeaderKey("Content-Type"), "image/png")
+		res.Write(buf.Bytes())
+
+		c.logger.Log("debug", fmt.Sprintf("analyzer revenue: %.2f", newAnalyzer.Revenue()))
+	}
 }

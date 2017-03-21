@@ -82,8 +82,8 @@ func (d *Decider) Sell() chan informer.Price {
 }
 
 func (d *Decider) Watch(prices chan informer.Price) {
-	for price := range prices {
-		err := d.watch(price)
+	for p := range prices {
+		err := d.watch(p)
 		if err != nil {
 			d.logger.Log("error", fmt.Sprintf("%#v", err))
 		}
