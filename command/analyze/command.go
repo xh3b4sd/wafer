@@ -12,11 +12,18 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/xh3b4sd/wafer/command/analyze/flag"
-	"github.com/xh3b4sd/wafer/service/analyzer"
-	"github.com/xh3b4sd/wafer/service/analyzer/iteration"
-	"github.com/xh3b4sd/wafer/service/decider"
+	"github.com/xh3b4sd/wafer/service/buyer"
+	v1buyer "github.com/xh3b4sd/wafer/service/buyer/v1"
+	"github.com/xh3b4sd/wafer/service/client"
+	analyzerclient "github.com/xh3b4sd/wafer/service/client/analyzer"
+	"github.com/xh3b4sd/wafer/service/exchange"
+	analyzerexchange "github.com/xh3b4sd/wafer/service/exchange/analyzer"
 	"github.com/xh3b4sd/wafer/service/informer"
 	"github.com/xh3b4sd/wafer/service/informer/csv"
+	"github.com/xh3b4sd/wafer/service/seller"
+	v1seller "github.com/xh3b4sd/wafer/service/seller/v1"
+	"github.com/xh3b4sd/wafer/service/trader"
+	v1trader "github.com/xh3b4sd/wafer/service/trader/v1"
 )
 
 var (
@@ -105,6 +112,9 @@ func (c *Command) execute() error {
 func (c *Command) drawChart(res http.ResponseWriter, req *http.Request) {
 	var err error
 
+	buyChan := make(chan informer.Price, 100)
+	sellChan := make(chan informer.Price, 100)
+
 	var newInformer informer.Informer
 	{
 		config := csv.DefaultConfig()
@@ -119,38 +129,94 @@ func (c *Command) drawChart(res http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	var newAnalyzer analyzer.Analyzer
+	var newClient client.Client
 	{
-		config := iteration.DefaultConfig()
+		config := analyzerclient.DefaultConfig()
+		config.BuyChan = buyChan
+		config.Logger = c.logger
+		config.SellChan = sellChan
+		newClient, err = analyzerclient.New(config)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	var newBuyer buyer.Buyer
+	{
+		config := v1buyer.DefaultConfig()
+		config.Logger = c.logger
+		config.Runtime.Chart.Window = 7 * 24 * time.Hour
+		config.Runtime.Surge.Min = 2.5
+		newBuyer, err = v1buyer.New(config)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	var newSeller seller.Seller
+	{
+		config := v1seller.DefaultConfig()
+		config.Logger = c.logger
+		config.Runtime.Chart.Window = 7 * 24 * time.Hour
+		config.Runtime.Trade.Duration.Min = 10 * time.Minute
+		config.Runtime.Trade.Fee.Min = 3
+		config.Runtime.Trade.Revenue.Min = 3
+		newSeller, err = v1seller.New(config)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	var newTrader trader.Trader
+	{
+		config := v1trader.DefaultConfig()
+		config.Buyer = newBuyer
+		config.Client = newClient
 		config.Informer = newInformer
 		config.Logger = c.logger
-		newAnalyzer, err = iteration.New(config)
+		config.Seller = newSeller
+		newTrader, err = v1trader.New(config)
 		if err != nil {
 			panic(err)
 		}
 	}
 
+	var newExchange exchange.Exchange
 	{
-		initialConfig := decider.Config{}
-		initialConfig.Analyzer.Chart.Window = 7 * 24 * time.Hour
-		initialConfig.Analyzer.Surge.Min = 2.5
-		initialConfig.Trader.Duration.Min = 10 * time.Minute
-		initialConfig.Trader.Fee.Min = 4
-		initialConfig.Trader.Revenue.Min = 2
-
-		c.logger.Log("debug", "analyzer iterating")
-		_, err := newAnalyzer.Iterate(initialConfig)
+		config := analyzerexchange.DefaultConfig()
+		config.BuyChan = buyChan
+		config.Informer = newInformer
+		config.Logger = c.logger
+		config.SellChan = sellChan
+		newExchange, err = analyzerexchange.New(config)
 		if err != nil {
 			panic(err)
 		}
-
-		c.logger.Log("debug", "analyzer rendering")
-		buf := newAnalyzer.Render()
-
-		c.logger.Log("debug", "analyzer responding")
-		res.Header().Set(http.CanonicalHeaderKey("Content-Type"), "image/png")
-		res.Write(buf.Bytes())
-
-		c.logger.Log("debug", fmt.Sprintf("analyzer revenue: %.2f", newAnalyzer.Revenue()))
 	}
+
+	go func() {
+		c.logger.Log("debug", "exchange started")
+		newExchange.Execute()
+		c.logger.Log("debug", "exchange stopped")
+	}()
+
+	go func() {
+		c.logger.Log("debug", "trader started")
+		newTrader.Execute()
+		c.logger.Log("debug", "trader stopped")
+	}()
+
+	c.logger.Log("debug", "rendering started")
+	buf, err := newExchange.Render()
+	if err != nil {
+		panic(err)
+	}
+	c.logger.Log("debug", "rendering finished")
+
+	c.logger.Log("debug", "response started")
+	res.Header().Set(http.CanonicalHeaderKey("Content-Type"), "image/png")
+	res.Write(buf.Bytes())
+	c.logger.Log("debug", "response finished")
+
+	c.logger.Log("debug", fmt.Sprintf("trader revenue: %.2f", newTrader.Runtime().State.Trade.Revenue.Total))
 }
