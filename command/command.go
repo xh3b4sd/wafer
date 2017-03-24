@@ -8,7 +8,6 @@ import (
 	micrologger "github.com/giantswarm/microkit/logger"
 
 	"github.com/xh3b4sd/wafer/command/analyze"
-	"github.com/xh3b4sd/wafer/command/render"
 	"github.com/xh3b4sd/wafer/command/version"
 )
 
@@ -55,18 +54,6 @@ func New(config Config) (*Command, error) {
 		}
 	}
 
-	var renderCommand *render.Command
-	{
-		renderConfig := render.DefaultConfig()
-
-		renderConfig.Logger = config.Logger
-
-		renderCommand, err = render.New(renderConfig)
-		if err != nil {
-			return nil, microerror.MaskAny(err)
-		}
-	}
-
 	var versionCommand *version.Command
 	{
 		versionConfig := version.DefaultConfig()
@@ -86,7 +73,6 @@ func New(config Config) (*Command, error) {
 		// Internals.
 		analyzeCommand: analyzeCommand,
 		cobraCommand:   nil,
-		renderCommand:  renderCommand,
 		versionCommand: versionCommand,
 	}
 
@@ -98,7 +84,6 @@ func New(config Config) (*Command, error) {
 	}
 
 	newCommand.cobraCommand.AddCommand(newCommand.analyzeCommand.CobraCommand())
-	newCommand.cobraCommand.AddCommand(newCommand.renderCommand.CobraCommand())
 	newCommand.cobraCommand.AddCommand(newCommand.versionCommand.CobraCommand())
 
 	return newCommand, nil
@@ -108,7 +93,6 @@ type Command struct {
 	// Internals.
 	analyzeCommand *analyze.Command
 	cobraCommand   *cobra.Command
-	renderCommand  *render.Command
 	versionCommand *version.Command
 }
 
@@ -118,10 +102,6 @@ func (c *Command) AnalyzeCommand() *analyze.Command {
 
 func (c *Command) CobraCommand() *cobra.Command {
 	return c.cobraCommand
-}
-
-func (c *Command) RenderCommand() *render.Command {
-	return c.renderCommand
 }
 
 func (c *Command) Execute(cmd *cobra.Command, args []string) {
