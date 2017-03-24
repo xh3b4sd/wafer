@@ -139,6 +139,7 @@ func (c *Command) drawChart(res http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			panic(err)
 		}
+		defer newClient.Close()
 	}
 
 	var newBuyer buyer.Buyer
@@ -192,6 +193,7 @@ func (c *Command) drawChart(res http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			panic(err)
 		}
+		defer newExchange.Close()
 	}
 
 	go func() {
@@ -200,11 +202,12 @@ func (c *Command) drawChart(res http.ResponseWriter, req *http.Request) {
 		c.logger.Log("debug", "exchange stopped")
 	}()
 
-	go func() {
-		c.logger.Log("debug", "trader started")
-		newTrader.Execute()
-		c.logger.Log("debug", "trader stopped")
-	}()
+	c.logger.Log("debug", "trader started")
+	err = newTrader.Execute()
+	if err != nil {
+		panic(err)
+	}
+	c.logger.Log("debug", "trader stopped")
 
 	c.logger.Log("debug", "rendering started")
 	buf, err := newExchange.Render()

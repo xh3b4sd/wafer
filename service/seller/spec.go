@@ -11,15 +11,13 @@ import (
 // Seller judges based on events to qualify if the situation at some stock
 // market is suited to sell commodities.
 type Seller interface {
-	// Consume takes the actual buy price and the currently incoming price event
-	// to analyze the stock market situation to identify probabilities of sell
-	// events.
-	Consume(buyPrice, currentPrice informer.Price) error
 	// Runtime returns a copy of information about the current runtime of the
 	// seller.
 	Runtime() runtime.Runtime
-	// Sell returns a channel which can be used to watch for sell events. A sell
-	// event indicates that the watched stock market is suitable to sell
+	// Sell takes the actual buy price and the currently incoming price event to
+	// analyze the stock market situation to identify probabilities of sell
+	// events. In case Sell returns true, a sell event is intended to happen. A
+	// sell event indicates that the watched stock market is suitable to sell
 	// commodities.
-	Sell() chan informer.Price
+	Sell(buyPrice, currentPrice informer.Price) (bool, error)
 }

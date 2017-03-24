@@ -64,8 +64,9 @@ func New(config Config) (exchange.Exchange, error) {
 		sellChan: config.SellChan,
 
 		// Settings.
-		buys:  []informer.Price{},
-		sells: []informer.Price{},
+		buys:   []informer.Price{},
+		closer: make(chan struct{}, 1),
+		sells:  []informer.Price{},
 	}
 
 	return newClient, nil
@@ -79,6 +80,7 @@ type Exchange struct {
 
 	// Internals.
 	buyChan  chan informer.Price
+	closer   chan struct{}
 	sellChan chan informer.Price
 
 	// Settings.
@@ -90,6 +92,11 @@ func (e *Exchange) Buys() []informer.Price {
 	return e.buys
 }
 
+func (e *Exchange) Close() error {
+	close(e.closer)
+	return nil
+}
+
 func (e *Exchange) Execute() {
 	for {
 		select {
@@ -97,6 +104,8 @@ func (e *Exchange) Execute() {
 			e.buys = append(e.buys, p)
 		case p := <-e.sellChan:
 			e.sells = append(e.sells, p)
+		case <-e.closer:
+			return
 		}
 	}
 }

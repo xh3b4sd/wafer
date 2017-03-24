@@ -14,6 +14,8 @@ import (
 type Exchange interface {
 	// Buys returns a list of buy price events.
 	Buys() []informer.Price
+	// Close shuts down the exchange.
+	Close() error
 	// Execute runs the exchange continuously and blocks until the configured
 	// client does not provide any further price events.
 	Execute()

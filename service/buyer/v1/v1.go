@@ -44,7 +44,6 @@ func New(config Config) (buyer.Buyer, error) {
 		logger: config.Logger,
 
 		// Internals.
-		buyChan: make(chan informer.Price, 10),
 		runtime: runtime.Runtime{
 			Config: config.Runtime,
 			State:  state.State{},
@@ -60,15 +59,10 @@ type Buyer struct {
 	logger micrologger.Logger
 
 	// Internals.
-	buyChan chan informer.Price
 	runtime runtime.Runtime
 }
 
-func (b *Buyer) Buy() chan informer.Price {
-	return b.buyChan
-}
-
-func (b *Buyer) Consume(price informer.Price) error {
+func (b *Buyer) Buy(price informer.Price) (bool, error) {
 	var err error
 	b.runtime.State.Chart.Window = append(b.runtime.State.Chart.Window, price)
 	b.runtime.State.Chart.Window, err = calculateWindow(b.runtime.State.Chart.Window, b.runtime.Config.Chart.Window)
@@ -76,9 +70,9 @@ func (b *Buyer) Consume(price informer.Price) error {
 		// In case there is not enough data yet, we cannot continue with the chart
 		// analyzation. So we return here and wait for the next events and proceed
 		// later, as soon as there is enough data for our algorithm.
-		return nil
+		return false, nil
 	} else if err != nil {
-		return microerror.MaskAny(err)
+		return false, microerror.MaskAny(err)
 	}
 
 	prices := findLastSurge(b.runtime.State.Chart.Window)
@@ -86,12 +80,10 @@ func (b *Buyer) Consume(price informer.Price) error {
 
 	// TODO find out why surge is 2.5 and not 45
 	if surge < b.runtime.Config.Surge.Min {
-		return nil
+		return false, nil
 	}
 
-	b.buyChan <- price
-
-	return nil
+	return true, nil
 }
 
 func (b *Buyer) Runtime() runtime.Runtime {

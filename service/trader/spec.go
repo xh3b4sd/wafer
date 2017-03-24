@@ -20,7 +20,7 @@ import (
 type Trader interface {
 	// Execute runs the trader continuously and blocks until the configured
 	// informer does not provide any further price events.
-	Execute()
+	Execute() error
 	// Stats returns a copy of the current statistical information about the
 	// current trader process.
 	Runtime() runtime.Runtime

@@ -87,56 +87,52 @@ type Trader struct {
 	runtime runtime.Runtime
 }
 
-func (t *Trader) Execute() {
-	done := make(chan struct{}, 1)
+func (t *Trader) Execute() error {
 	buyPrice := informer.Price{}
 	isBuyEvent := true
 
-	go func() {
-		for {
-			select {
-			case p := <-t.buyer.Buy():
-				err := t.client.Buy(p)
-				if err != nil {
-					t.logger.Log("error", fmt.Sprintf("%#v", err))
-					continue
-				}
-
-				buyPrice = p
-				isBuyEvent = false
-			case p := <-t.seller.Sell():
-				err := t.client.Sell(p)
-				if err != nil {
-					t.logger.Log("error", fmt.Sprintf("%#v", err))
-					continue
-				}
-
-				t.runtime.State.Trade.Revenue.Total += buyPrice.Buy - p.Sell
-				isBuyEvent = true
-			case <-done:
-				return
-			}
-		}
-	}()
-
 	for p := range t.informer.Prices() {
 		if isBuyEvent {
-			err := t.buyer.Consume(p)
+			isBuy, err := t.buyer.Buy(p)
 			if err != nil {
-				t.logger.Log("error", fmt.Sprintf("%#v", err))
+				return microerror.MaskAny(err)
+			}
+
+			if !isBuy {
 				continue
 			}
+			err = t.client.Buy(p)
+			if err != nil {
+				return microerror.MaskAny(err)
+				continue
+			}
+			t.logger.Log("event", "buy", "price", fmt.Sprintf("%.2f", p.Buy))
+
+			buyPrice = p
+			isBuyEvent = false
 		} else {
-			err := t.seller.Consume(buyPrice, p)
+			isSell, err := t.seller.Sell(buyPrice, p)
 			if err != nil {
-				t.logger.Log("error", fmt.Sprintf("%#v", err))
+				return microerror.MaskAny(err)
+			}
+
+			if !isSell {
 				continue
 			}
+
+			err = t.client.Sell(p)
+			if err != nil {
+				return microerror.MaskAny(err)
+				continue
+			}
+			t.logger.Log("event", "sell", "price", fmt.Sprintf("%.2f", p.Sell))
+
+			t.runtime.State.Trade.Revenue.Total += p.Sell - buyPrice.Buy
+			isBuyEvent = true
 		}
 	}
 
-	t.client.Close()
-	done <- struct{}{}
+	return nil
 }
 
 func (t *Trader) Runtime() runtime.Runtime {

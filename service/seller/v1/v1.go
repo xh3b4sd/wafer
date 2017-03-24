@@ -44,7 +44,6 @@ func New(config Config) (seller.Seller, error) {
 		logger: config.Logger,
 
 		// Internals.
-		sellChan: make(chan informer.Price, 10),
 		runtime: runtime.Runtime{
 			Config: config.Runtime,
 			State:  state.State{},
@@ -60,11 +59,14 @@ type Seller struct {
 	logger micrologger.Logger
 
 	// Internals.
-	sellChan chan informer.Price
-	runtime  runtime.Runtime
+	runtime runtime.Runtime
 }
 
-func (s *Seller) Consume(buyPrice, currentPrice informer.Price) error {
+func (s *Seller) Runtime() runtime.Runtime {
+	return s.runtime
+}
+
+func (s *Seller) Sell(buyPrice, currentPrice informer.Price) (bool, error) {
 	var err error
 	s.runtime.State.Chart.Window = append(s.runtime.State.Chart.Window, currentPrice)
 	s.runtime.State.Chart.Window, err = calculateWindow(s.runtime.State.Chart.Window, s.runtime.Config.Chart.Window)
@@ -72,30 +74,20 @@ func (s *Seller) Consume(buyPrice, currentPrice informer.Price) error {
 		// In case there is not enough data yet, we cannot continue with the chart
 		// analyzation. So we return here and wait for the next events and proceed
 		// later, as soon as there is enough data for our algorithm.
-		return nil
+		return false, nil
 	} else if err != nil {
-		return microerror.MaskAny(err)
+		return false, microerror.MaskAny(err)
 	}
 
 	revenue := calculateRevenue(buyPrice.Buy, currentPrice.Sell, s.runtime.Config.Trade.Fee.Min)
 	if revenue < s.runtime.Config.Trade.Revenue.Min {
-		return nil
+		return false, nil
 	}
 
 	duration := currentPrice.Time.Sub(buyPrice.Time)
 	if duration < s.runtime.Config.Trade.Duration.Min {
-		return nil
+		return false, nil
 	}
 
-	s.sellChan <- currentPrice
-
-	return nil
-}
-
-func (s *Seller) Runtime() runtime.Runtime {
-	return s.runtime
-}
-
-func (s *Seller) Sell() chan informer.Price {
-	return s.sellChan
+	return true, nil
 }
