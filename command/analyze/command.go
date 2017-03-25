@@ -9,6 +9,7 @@ import (
 
 	microerror "github.com/giantswarm/microkit/error"
 	micrologger "github.com/giantswarm/microkit/logger"
+	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
 	"github.com/xh3b4sd/wafer/command/analyze/flag"
@@ -103,13 +104,19 @@ func (c *Command) Execute(cmd *cobra.Command, args []string) {
 }
 
 func (c *Command) execute() error {
-	http.HandleFunc("/", c.drawChart)
-	http.ListenAndServe(":8000", nil)
+	rtr := mux.NewRouter()
+	rtr.HandleFunc("/", c.handler).Methods("GET")
+
+	http.Handle("/", rtr)
+	err := http.ListenAndServe(":8000", nil)
+	if err != nil {
+		return microerror.MaskAny(err)
+	}
 
 	return nil
 }
 
-func (c *Command) drawChart(res http.ResponseWriter, req *http.Request) {
+func (c *Command) handler(res http.ResponseWriter, req *http.Request) {
 	var err error
 
 	buyChan := make(chan informer.Price, 100)
@@ -147,7 +154,10 @@ func (c *Command) drawChart(res http.ResponseWriter, req *http.Request) {
 		config := v1buyer.DefaultConfig()
 		config.Logger = c.logger
 		config.Runtime.Chart.Window = 7 * 24 * time.Hour
-		config.Runtime.Surge.Min = 2.5
+		config.Runtime.Surge.Duration.Min = 20 * time.Minute
+		config.Runtime.Surge.Min = 3.5
+		config.Runtime.Surge.Tolerance = 0.6
+		config.Runtime.Trade.Pause.Min = 5 * time.Hour
 		newBuyer, err = v1buyer.New(config)
 		if err != nil {
 			panic(err)
@@ -159,9 +169,9 @@ func (c *Command) drawChart(res http.ResponseWriter, req *http.Request) {
 		config := v1seller.DefaultConfig()
 		config.Logger = c.logger
 		config.Runtime.Chart.Window = 7 * 24 * time.Hour
-		config.Runtime.Trade.Duration.Min = 10 * time.Minute
-		config.Runtime.Trade.Fee.Min = 3
-		config.Runtime.Trade.Revenue.Min = 3
+		config.Runtime.Trade.Duration.Min = 4 * time.Minute
+		config.Runtime.Trade.Fee.Min = 1.5
+		config.Runtime.Trade.Revenue.Min = 4.5
 		newSeller, err = v1seller.New(config)
 		if err != nil {
 			panic(err)

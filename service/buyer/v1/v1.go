@@ -1,6 +1,9 @@
 package v1
 
 import (
+	"fmt"
+	"time"
+
 	microerror "github.com/giantswarm/microkit/error"
 	micrologger "github.com/giantswarm/microkit/logger"
 
@@ -75,13 +78,29 @@ func (b *Buyer) Buy(price informer.Price) (bool, error) {
 		return false, microerror.MaskAny(err)
 	}
 
-	prices := findLastSurge(b.runtime.State.Chart.Window)
-	surge := calculateSurgeAverage(prices)
+	prices := findLastSurge(b.runtime.State.Chart.Window, b.runtime.Config.Surge.Tolerance)
 
-	// TODO find out why surge is 2.5 and not 45
+	surge := calculateSurgeAverage(prices)
 	if surge < b.runtime.Config.Surge.Min {
 		return false, nil
 	}
+
+	duration := calculateSurgeDuration(prices)
+	duration = duration + (time.Duration(duration.Seconds()*surge*surge/100) * time.Second)
+	if duration < b.runtime.Config.Surge.Duration.Min {
+		return false, nil
+	}
+
+	fmt.Printf("\n")
+	fmt.Printf("last time:    %#v\n", b.runtime.State.Trade.Buy.Last.String())
+	fmt.Printf("current time: %#v\n", price.Time.String())
+	fmt.Printf("\n")
+
+	if !b.runtime.State.Trade.Buy.Last.IsZero() && b.runtime.State.Trade.Buy.Last.Add(b.runtime.Config.Trade.Pause.Min).Before(price.Time) {
+		return false, nil
+	}
+
+	b.runtime.State.Trade.Buy.Last = price.Time
 
 	return true, nil
 }

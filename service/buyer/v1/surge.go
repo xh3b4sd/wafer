@@ -47,8 +47,25 @@ func calculateSurgeAverage(list []informer.Price) float64 {
 	return surge
 }
 
-// TODO add configuration for tolerated surge burst
-func findLastSurge(prices []informer.Price) []informer.Price {
+func calculateSurgeDuration(list []informer.Price) time.Duration {
+	if len(list) < 2 {
+		return 0
+	}
+
+	leftBound := list[0]
+	rightBound := list[len(list)-1]
+
+	duration := rightBound.Time.Sub(leftBound.Time)
+
+	return duration
+}
+
+func calculateSurgeTolerance(price, configTolerance float64) float64 {
+	tolerance := price * configTolerance / 100
+	return tolerance
+}
+
+func findLastSurge(prices []informer.Price, configTolerance float64) []informer.Price {
 	if len(prices) < 2 {
 		return []informer.Price{}
 	}
@@ -58,7 +75,8 @@ func findLastSurge(prices []informer.Price) []informer.Price {
 
 	reversedSurges := reverse(prices)
 	for i, s := range reversedSurges {
-		if i == 0 || s.Buy < prevSurge.Buy {
+		tolerance := calculateSurgeTolerance(prevSurge.Buy, configTolerance)
+		if i == 0 || prevSurge.Buy > (s.Buy-tolerance) {
 			n = i
 			prevSurge = s
 			continue
@@ -66,9 +84,7 @@ func findLastSurge(prices []informer.Price) []informer.Price {
 
 		break
 	}
-	reversedSurges = reversedSurges[:n+1]
-
-	lastSurges := reverse(reversedSurges)
+	lastSurges := reverse(reversedSurges[:n+1])
 
 	if len(lastSurges) < 2 {
 		return []informer.Price{}

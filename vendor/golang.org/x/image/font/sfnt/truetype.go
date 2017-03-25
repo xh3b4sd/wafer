@@ -85,7 +85,7 @@ func parseLoca(src *source, loca table, glyfOffset uint32, indexToLocFormat bool
 const glyfHeaderLen = 10
 
 func loadGlyf(f *Font, b *Buffer, x GlyphIndex, stackBottom, recursionDepth uint32) error {
-	data, err := f.viewGlyphData(b, x)
+	data, _, _, err := f.viewGlyphData(b, x)
 	if err != nil {
 		return err
 	}
@@ -285,9 +285,6 @@ func loadCompoundGlyf(f *Font, b *Buffer, data []byte, stackBottom, recursionDep
 				elem.transformYX = int16(u16(data[4:]))
 				elem.transformYY = int16(u16(data[6:]))
 				data = data[8:]
-				// TODO: find a font that does this, so we can verify that
-				// we've got the xy vs yx ordering right.
-				return errUnsupportedCompoundGlyph
 			}
 		}
 

@@ -119,6 +119,7 @@ func (e *Exchange) Render() (*bytes.Buffer, error) {
 	}
 
 	var gridLines []chart.GridLine
+	var gridMajoStyle chart.Style
 	for _, p := range e.buys {
 		gl := chart.GridLine{
 			Value: float64(p.Time.Unix()),
@@ -131,6 +132,13 @@ func (e *Exchange) Render() (*bytes.Buffer, error) {
 		}
 		gridLines = append(gridLines, gl)
 	}
+	if len(gridLines) > 0 {
+		gridMajoStyle = chart.Style{
+			Show:        true,
+			StrokeColor: chart.ColorBlack,
+			StrokeWidth: 0.2,
+		}
+	}
 
 	graph := chart.Chart{
 		Width: 1280,
@@ -139,12 +147,8 @@ func (e *Exchange) Render() (*bytes.Buffer, error) {
 				Show: true,
 			},
 			ValueFormatter: chart.TimeHourValueFormatter,
-			GridMajorStyle: chart.Style{
-				Show:        true,
-				StrokeColor: chart.ColorBlack,
-				StrokeWidth: 0.2,
-			},
-			GridLines: gridLines,
+			GridMajorStyle: gridMajoStyle,
+			GridLines:      gridLines,
 		},
 		YAxis: chart.YAxis{
 			Name:      "price in USD",

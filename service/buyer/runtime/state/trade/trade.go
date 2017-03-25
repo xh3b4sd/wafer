@@ -1,6 +1,9 @@
 package trade
 
+import (
+	"github.com/xh3b4sd/wafer/service/buyer/runtime/state/trade/buy"
+)
+
 type Trade struct {
-	// Total is the total number of trades started by the buyer.
-	Total int
+	Buy buy.Buy
 }

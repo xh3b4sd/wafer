@@ -77,12 +77,14 @@ func Test_calculateSurge(t *testing.T) {
 
 func Test_findLastSurge(t *testing.T) {
 	testCases := []struct {
-		Prices   []informer.Price
-		Expected []informer.Price
+		Prices          []informer.Price
+		ConfigTolerance float64
+		Expected        []informer.Price
 	}{
 		{
-			Prices:   []informer.Price{},
-			Expected: []informer.Price{},
+			Prices:          []informer.Price{},
+			ConfigTolerance: 0,
+			Expected:        []informer.Price{},
 		},
 		{
 			Prices: []informer.Price{
@@ -93,6 +95,7 @@ func Test_findLastSurge(t *testing.T) {
 				{Buy: 20.0, Sell: 20.0, Time: time.Unix(5, 0)},
 				{Buy: 30.0, Sell: 30.0, Time: time.Unix(6, 0)},
 			},
+			ConfigTolerance: 0,
 			Expected: []informer.Price{
 				{Buy: 10.0, Sell: 10.0, Time: time.Unix(4, 0)},
 				{Buy: 20.0, Sell: 20.0, Time: time.Unix(5, 0)},
@@ -108,6 +111,7 @@ func Test_findLastSurge(t *testing.T) {
 				{Buy: 40.0, Sell: 40.0, Time: time.Unix(5, 0)},
 				{Buy: 90.0, Sell: 90.0, Time: time.Unix(6, 0)},
 			},
+			ConfigTolerance: 0,
 			Expected: []informer.Price{
 				{Buy: 10.0, Sell: 10.0, Time: time.Unix(4, 0)},
 				{Buy: 40.0, Sell: 40.0, Time: time.Unix(5, 0)},
@@ -117,12 +121,13 @@ func Test_findLastSurge(t *testing.T) {
 		{
 			Prices: []informer.Price{
 				{Buy: 10.0, Sell: 10.0, Time: time.Unix(1, 0)},
-				{Buy: 10.0, Sell: 20.0, Time: time.Unix(2, 0)},
-				{Buy: 10.0, Sell: 30.0, Time: time.Unix(3, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(2, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(3, 0)},
 				{Buy: 10.0, Sell: 10.0, Time: time.Unix(4, 0)},
 				{Buy: 40.0, Sell: 40.0, Time: time.Unix(5, 0)},
 				{Buy: 90.0, Sell: 90.0, Time: time.Unix(6, 0)},
 			},
+			ConfigTolerance: 0,
 			Expected: []informer.Price{
 				{Buy: 10.0, Sell: 10.0, Time: time.Unix(4, 0)},
 				{Buy: 40.0, Sell: 40.0, Time: time.Unix(5, 0)},
@@ -134,16 +139,38 @@ func Test_findLastSurge(t *testing.T) {
 				{Buy: 90.0, Sell: 90.0, Time: time.Unix(1, 0)},
 				{Buy: 40.0, Sell: 40.0, Time: time.Unix(2, 0)},
 				{Buy: 10.0, Sell: 10.0, Time: time.Unix(3, 0)},
-				{Buy: 10.0, Sell: 20.0, Time: time.Unix(4, 0)},
-				{Buy: 10.0, Sell: 30.0, Time: time.Unix(5, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(4, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(5, 0)},
 				{Buy: 10.0, Sell: 10.0, Time: time.Unix(6, 0)},
 			},
-			Expected: []informer.Price{},
+			ConfigTolerance: 0,
+			Expected:        []informer.Price{},
+		},
+		{
+			Prices: []informer.Price{
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(1, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(2, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(3, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(4, 0)},
+				{Buy: 40.0, Sell: 40.0, Time: time.Unix(5, 0)},
+				{Buy: 40.3, Sell: 40.3, Time: time.Unix(6, 0)},
+				{Buy: 90.0, Sell: 90.0, Time: time.Unix(7, 0)},
+			},
+			ConfigTolerance: 1,
+			Expected: []informer.Price{
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(1, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(2, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(3, 0)},
+				{Buy: 10.0, Sell: 10.0, Time: time.Unix(4, 0)},
+				{Buy: 40.0, Sell: 40.0, Time: time.Unix(5, 0)},
+				{Buy: 40.3, Sell: 40.3, Time: time.Unix(6, 0)},
+				{Buy: 90.0, Sell: 90.0, Time: time.Unix(7, 0)},
+			},
 		},
 	}
 
 	for i, testCase := range testCases {
-		expected := findLastSurge(testCase.Prices)
+		expected := findLastSurge(testCase.Prices, testCase.ConfigTolerance)
 		if !reflect.DeepEqual(expected, testCase.Expected) {
 			t.Fatal("case", i+1, "expected", testCase.Expected, "got", expected)
 		}

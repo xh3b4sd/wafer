@@ -1,5 +1,5 @@
-hash: 641b206e3708ef67dc20f22524af766b9d821fbc69d2fb941319673b9a673acb
-updated: 2017-03-19T00:31:53.25512068+01:00
+hash: 2b71711b91efdbf75c862bfa076375522551d5653befcab5196e4a5104596666
+updated: 2017-03-25T02:33:59.33251293+01:00
 imports:
 - name: github.com/blendlabs/go-exception
   version: 743c4bf7eb9a27daace783577299612a7345bf09
@@ -23,6 +23,10 @@ imports:
   subpackages:
   - raster
   - truetype
+- name: github.com/gorilla/context
+  version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
+- name: github.com/gorilla/mux
+  version: 392c28fe23e1c45ddba891b0320b3b5df220beea
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/juju/errgo
@@ -38,7 +42,7 @@ imports:
   subpackages:
   - drawing
 - name: golang.org/x/image
-  version: 6847effb9b768b10e85aae2c552c93fefa93c30a
+  version: c0851fbc5b9272dd7d08a021e9e3d2a21027b51f
   subpackages:
   - draw
   - font
