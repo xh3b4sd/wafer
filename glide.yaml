@@ -1,12 +1,11 @@
 package: github.com/xh3b4sd/wafer
 import:
 - package: github.com/giantswarm/microkit
-  subpackages:
-  - error
+  version: 8081cd79373ce7175be0f13ddef5b546521c2a06
 - package: github.com/juju/errgo
 - package: github.com/wcharczuk/go-chart
   version: ~2.0.0
 - package: github.com/gorilla/mux
-  version: ~1.3.0
+  version: 392c28fe23e1c45ddba891b0320b3b5df220beea
 - package: github.com/spf13/cast
   version: ~1.0.0
