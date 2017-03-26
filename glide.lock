@@ -1,5 +1,5 @@
-hash: 2b71711b91efdbf75c862bfa076375522551d5653befcab5196e4a5104596666
-updated: 2017-03-25T02:33:59.33251293+01:00
+hash: f9bf30cbc3a050c9d2ab4055ab94035d594010874a5511d42600b7782a0c398d
+updated: 2017-03-26T22:01:30.122931616+02:00
 imports:
 - name: github.com/blendlabs/go-exception
   version: 743c4bf7eb9a27daace783577299612a7345bf09
@@ -33,6 +33,8 @@ imports:
   version: 08cceb5d0b5331634b9826762a8fd53b29b86ad8
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
+- name: github.com/spf13/cast
+  version: ce135a4ebeee6cfe9a26c93ee0d37825f26113c7
 - name: github.com/spf13/cobra
   version: 7be4beda01ec05d0b93d80b3facd2b6f44080d94
 - name: github.com/spf13/pflag
