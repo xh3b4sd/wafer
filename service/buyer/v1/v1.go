@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"fmt"
 	"time"
 
 	microerror "github.com/giantswarm/microkit/error"
@@ -12,6 +11,7 @@ import (
 	"github.com/xh3b4sd/wafer/service/buyer/runtime/config"
 	"github.com/xh3b4sd/wafer/service/buyer/runtime/state"
 	"github.com/xh3b4sd/wafer/service/informer"
+	"github.com/xh3b4sd/wafer/service/window"
 )
 
 // Config is the configuration used to create a new buyer.
@@ -68,8 +68,8 @@ type Buyer struct {
 func (b *Buyer) Buy(price informer.Price) (bool, error) {
 	var err error
 	b.runtime.State.Chart.Window = append(b.runtime.State.Chart.Window, price)
-	b.runtime.State.Chart.Window, err = calculateWindow(b.runtime.State.Chart.Window, b.runtime.Config.Chart.Window)
-	if IsNotEnoughData(err) {
+	b.runtime.State.Chart.Window, err = window.Calculate(b.runtime.State.Chart.Window, b.runtime.Config.Chart.Window)
+	if window.IsNotEnoughData(err) {
 		// In case there is not enough data yet, we cannot continue with the chart
 		// analyzation. So we return here and wait for the next events and proceed
 		// later, as soon as there is enough data for our algorithm.
@@ -90,11 +90,6 @@ func (b *Buyer) Buy(price informer.Price) (bool, error) {
 	if duration < b.runtime.Config.Surge.Duration.Min {
 		return false, nil
 	}
-
-	fmt.Printf("\n")
-	fmt.Printf("last time:    %#v\n", b.runtime.State.Trade.Buy.Last.String())
-	fmt.Printf("current time: %#v\n", price.Time.String())
-	fmt.Printf("\n")
 
 	if !b.runtime.State.Trade.Buy.Last.IsZero() && b.runtime.State.Trade.Buy.Last.Add(b.runtime.Config.Trade.Pause.Min).Before(price.Time) {
 		return false, nil

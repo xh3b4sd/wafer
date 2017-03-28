@@ -9,6 +9,7 @@ import (
 	"github.com/xh3b4sd/wafer/service/seller/runtime"
 	"github.com/xh3b4sd/wafer/service/seller/runtime/config"
 	"github.com/xh3b4sd/wafer/service/seller/runtime/state"
+	"github.com/xh3b4sd/wafer/service/window"
 )
 
 // Config is the configuration used to create a new seller.
@@ -69,8 +70,8 @@ func (s *Seller) Runtime() runtime.Runtime {
 func (s *Seller) Sell(buyPrice, currentPrice informer.Price) (bool, error) {
 	var err error
 	s.runtime.State.Chart.Window = append(s.runtime.State.Chart.Window, currentPrice)
-	s.runtime.State.Chart.Window, err = calculateWindow(s.runtime.State.Chart.Window, s.runtime.Config.Chart.Window)
-	if IsNotEnoughData(err) {
+	s.runtime.State.Chart.Window, err = window.Calculate(s.runtime.State.Chart.Window, s.runtime.Config.Chart.Window)
+	if window.IsNotEnoughData(err) {
 		// In case there is not enough data yet, we cannot continue with the chart
 		// analyzation. So we return here and wait for the next events and proceed
 		// later, as soon as there is enough data for our algorithm.
