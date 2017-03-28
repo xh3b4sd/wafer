@@ -91,44 +91,46 @@ func (t *Trader) Execute() error {
 	buyPrice := informer.Price{}
 	isBuyEvent := true
 
-	for p := range t.informer.Prices() {
-		if isBuyEvent {
-			isBuy, err := t.buyer.Buy(p)
-			if err != nil {
-				return microerror.MaskAny(err)
-			}
+	for _, c := range t.informer.Prices() {
+		for p := range c {
+			if isBuyEvent {
+				isBuy, err := t.buyer.Buy(p)
+				if err != nil {
+					return microerror.MaskAny(err)
+				}
 
-			if !isBuy {
-				continue
-			}
-			err = t.client.Buy(p)
-			if err != nil {
-				return microerror.MaskAny(err)
-				continue
-			}
-			t.logger.Log("event", "buy", "price", fmt.Sprintf("%.2f", p.Buy))
+				if !isBuy {
+					continue
+				}
+				err = t.client.Buy(p)
+				if err != nil {
+					return microerror.MaskAny(err)
+					continue
+				}
+				t.logger.Log("event", "buy", "price", fmt.Sprintf("%.2f", p.Buy))
 
-			buyPrice = p
-			isBuyEvent = false
-		} else {
-			isSell, err := t.seller.Sell(buyPrice, p)
-			if err != nil {
-				return microerror.MaskAny(err)
-			}
+				buyPrice = p
+				isBuyEvent = false
+			} else {
+				isSell, err := t.seller.Sell(buyPrice, p)
+				if err != nil {
+					return microerror.MaskAny(err)
+				}
 
-			if !isSell {
-				continue
-			}
+				if !isSell {
+					continue
+				}
 
-			err = t.client.Sell(p)
-			if err != nil {
-				return microerror.MaskAny(err)
-				continue
-			}
-			t.logger.Log("event", "sell", "price", fmt.Sprintf("%.2f", p.Sell))
+				err = t.client.Sell(p)
+				if err != nil {
+					return microerror.MaskAny(err)
+					continue
+				}
+				t.logger.Log("event", "sell", "price", fmt.Sprintf("%.2f", p.Sell))
 
-			t.runtime.State.Trade.Revenue.Total += p.Sell - buyPrice.Buy
-			isBuyEvent = true
+				t.runtime.State.Trade.Revenue.Total += p.Sell - buyPrice.Buy
+				isBuyEvent = true
+			}
 		}
 	}
 

@@ -98,11 +98,12 @@ func main() {
 
 	daemonCommand := newCommand.DaemonCommand().CobraCommand()
 
+	daemonCommand.PersistentFlags().String(f.Service.Informer.CSV.Dir, "", "The absolute dir path of CSV files containing chart data and their corresponding header options.")
 	daemonCommand.PersistentFlags().String(f.Service.Informer.CSV.File, "", "The absolute file path of a CSV file containing chart data.")
-	daemonCommand.PersistentFlags().Bool(f.Service.Informer.CSV.IgnoreHeader, false, "Whether to ignore the first row of the CSV file.")
-	daemonCommand.PersistentFlags().Int(f.Service.Informer.CSV.Index.Buy, 0, "The index of the column within a CSV file representing buy prices.")
-	daemonCommand.PersistentFlags().Int(f.Service.Informer.CSV.Index.Sell, 0, "The index of the column within a CSV file representing sell prices.")
-	daemonCommand.PersistentFlags().Int(f.Service.Informer.CSV.Index.Time, 0, "The index of the column within a CSV file representing price times.")
+	daemonCommand.PersistentFlags().Int(f.Service.Informer.CSV.Header.Buy, 0, "The index of the column within a CSV file representing buy prices.")
+	daemonCommand.PersistentFlags().Bool(f.Service.Informer.CSV.Header.Ignore, false, "Whether to ignore the first row of the CSV file.")
+	daemonCommand.PersistentFlags().Int(f.Service.Informer.CSV.Header.Sell, 0, "The index of the column within a CSV file representing sell prices.")
+	daemonCommand.PersistentFlags().Int(f.Service.Informer.CSV.Header.Time, 0, "The index of the column within a CSV file representing price times.")
 	daemonCommand.PersistentFlags().String(f.Service.Informer.Kind, "csv", "The kind of the informer imlementation to use.")
 
 	newCommand.CobraCommand().Execute()

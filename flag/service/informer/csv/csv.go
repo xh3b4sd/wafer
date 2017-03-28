@@ -1,11 +1,11 @@
 package csv
 
 import (
-	"github.com/xh3b4sd/wafer/flag/service/informer/csv/index"
+	"github.com/xh3b4sd/wafer/flag/service/informer/csv/header"
 )
 
 type CSV struct {
-	File         string
-	IgnoreHeader string
-	Index        index.Index
+	Dir    string
+	File   string
+	Header header.Header
 }

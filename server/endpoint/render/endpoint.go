@@ -117,11 +117,11 @@ func (e *Endpoint) Endpoint() kitendpoint.Endpoint {
 		var newInformer informer.Informer
 		{
 			config := csv.DefaultConfig()
-			config.BuyIndex = 9
-			config.File = "/Users/xh3b4sd/Downloads/test.csv"
-			config.IgnoreHeader = true
-			config.SellIndex = 10
-			config.TimeIndex = 12
+			config.File.Header.Buy = 9
+			config.File.Header.Ignore = true
+			config.File.Header.Sell = 10
+			config.File.Header.Time = 12
+			config.File.Path = "/Users/xh3b4sd/Downloads/test.csv"
 			newInformer, err = csv.New(config)
 			if err != nil {
 				return nil, microerror.MaskAny(err)

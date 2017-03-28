@@ -1,5 +1,5 @@
-hash: 9a8c6d36dd4adfcf90b83dba3c9fec639e5e8e9d8e31fa4091c83c2b6140dfa1
-updated: 2017-03-26T23:06:10.270898501+02:00
+hash: b940be5e2e750ae9b78b0fdcb8b13cc8790b7072cd0a21946c584bcde63dcde5
+updated: 2017-03-27T23:29:02.735488445+02:00
 imports:
 - name: github.com/beorn7/perks
   version: 4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9
@@ -8,7 +8,7 @@ imports:
 - name: github.com/blendlabs/go-exception
   version: 3bd54ff6f52802add2ff09b0d4859572c8250f76
 - name: github.com/coreos/etcd
-  version: 41e52ebc22add2f9b91a59f90db8e31f7e5c0538
+  version: 20490caaf0dcd96bb4a95e40625559def8ef5b04
   subpackages:
   - auth/authpb
   - client
@@ -136,7 +136,7 @@ imports:
 - name: github.com/spf13/jwalterweatherman
   version: fa7ca7e836cf3a8bb4ebf799f472c12d7e903d66
 - name: github.com/spf13/pflag
-  version: d90f37a48761fe767528f31db1955e4f795d652f
+  version: d16db1e50e33dff1b6cdf37596cef36742128670
 - name: github.com/spf13/viper
   version: 84f94806c67f59dd7ae87bc5351f7a9c94a4558d
 - name: github.com/tylerb/graceful

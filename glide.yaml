@@ -9,3 +9,4 @@ import:
   version: 392c28fe23e1c45ddba891b0320b3b5df220beea
 - package: github.com/spf13/cast
   version: ~1.0.0
+- package: gopkg.in/yaml.v2

@@ -19,6 +19,12 @@ type Price struct {
 
 // Informer provides market prices.
 type Informer interface {
-	// Prices returns a channel which can be used to watch market prices.
-	Prices() chan Price
+	// Prices returns a list of channels which can be used to watch market prices.
+	// Each channel of the returned list represents price events from its
+	// logically own chart. E.g. the CSV informer implements consuming multiple
+	// CSV files. Each CSV file contains price events of potentially different
+	// stock markets. Also note that the returned list of channels must be
+	// consumed beginning with the first channel of the list. Consuming the last
+	// channel of the returned list at first would cause a dead lock.
+	Prices() []chan Price
 }

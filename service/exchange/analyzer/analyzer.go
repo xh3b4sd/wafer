@@ -113,9 +113,11 @@ func (e *Exchange) Execute() {
 func (e *Exchange) Render() (*bytes.Buffer, error) {
 	var xValues []float64
 	var yValues []float64
-	for p := range e.informer.Prices() {
-		xValues = append(xValues, float64(p.Time.Unix()))
-		yValues = append(yValues, p.Buy)
+	for _, c := range e.informer.Prices() {
+		for p := range c {
+			xValues = append(xValues, float64(p.Time.Unix()))
+			yValues = append(yValues, p.Buy)
+		}
 	}
 
 	var gridLines []chart.GridLine
