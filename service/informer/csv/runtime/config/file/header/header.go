@@ -21,9 +21,6 @@ type Header struct {
 }
 
 func (h Header) Validate() error {
-	if h.Buy == h.Sell {
-		return microerror.MaskAnyf(invalidConfigError, "h.Buy must not be equal to h.Sell")
-	}
 	if h.Buy == h.Time {
 		return microerror.MaskAnyf(invalidConfigError, "h.Buy must not be equal to h.Time")
 	}

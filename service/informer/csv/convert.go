@@ -82,6 +82,12 @@ func dirToFiles(dir runtimeconfigdir.Dir) ([]runtimestatefile.File, error) {
 				continue
 			}
 
+			// We accept a README.md to be able to provide useful information on the
+			// chart data stored in the chart directory.
+			if ifi.Name() == "README.md" {
+				continue
+			}
+
 			return nil, microerror.MaskAnyf(invalidExecutionError, "additional file '%s' not allowed", ifi.Name())
 		}
 
