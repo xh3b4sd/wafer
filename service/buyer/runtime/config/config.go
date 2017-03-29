@@ -17,6 +17,7 @@ const (
 	PermIDSurgeDurationMin = "Surge.Duration.Min"
 	PermIDSurgeMin         = "Surge.Min"
 	PermIDSurgeTolerance   = "Surge.Tolerance"
+	PermIDTradeCorridorMax = "Trade.Corridor.Max"
 	PermIDTradePauseMin    = "Trade.Pause.Min"
 )
 
@@ -64,6 +65,14 @@ func (c *Config) GetPermConfigs() []permutationconfig.Config {
 
 	//
 	config = permutationconfig.Config{}
+	config.ID = PermIDTradeCorridorMax
+	config.Min = 75.0
+	config.Max = 100.0
+	config.Step = 0.5
+	configs = append(configs, config)
+
+	//
+	config = permutationconfig.Config{}
 	config.ID = PermIDTradePauseMin
 	config.Min = 0
 	config.Max = 24 * time.Hour
@@ -99,6 +108,12 @@ func (c *Config) SetPermValue(permID string, permValue interface{}) error {
 			return microerror.MaskAny(err)
 		}
 		c.Surge.Tolerance = f
+	case PermIDTradeCorridorMax:
+		f, err := cast.ToFloat64E(permValue)
+		if err != nil {
+			return microerror.MaskAny(err)
+		}
+		c.Trade.Corridor.Max = f
 	case PermIDTradePauseMin:
 		d, err := cast.ToDurationE(permValue)
 		if err != nil {

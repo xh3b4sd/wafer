@@ -160,7 +160,6 @@ func (e *Endpoint) Endpoint() kitendpoint.Endpoint {
 		{
 			config := v1seller.DefaultConfig()
 			config.Logger = e.logger
-			config.Runtime.Chart.Window = 7 * 24 * time.Hour
 			config.Runtime.Trade.Duration.Min = 4 * time.Minute
 			config.Runtime.Trade.Fee.Min = 1.5
 			config.Runtime.Trade.Revenue.Min = 4.5

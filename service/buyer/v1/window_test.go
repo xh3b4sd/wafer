@@ -1,4 +1,4 @@
-package window
+package v1
 
 import (
 	"reflect"
@@ -8,7 +8,7 @@ import (
 	"github.com/xh3b4sd/wafer/service/informer"
 )
 
-func Test_Calculate(t *testing.T) {
+func Test_calculateWindow(t *testing.T) {
 	testCases := []struct {
 		HistWindow   []informer.Price
 		ConfigWindow time.Duration
@@ -58,7 +58,7 @@ func Test_Calculate(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		expected, err := Calculate(testCase.HistWindow, testCase.ConfigWindow)
+		expected, err := calculateWindow(testCase.HistWindow, testCase.ConfigWindow)
 		if err != nil {
 			t.Fatal("case", i+1, "expected", nil, "got", err)
 		}

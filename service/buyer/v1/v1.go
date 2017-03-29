@@ -11,7 +11,6 @@ import (
 	"github.com/xh3b4sd/wafer/service/buyer/runtime/config"
 	"github.com/xh3b4sd/wafer/service/buyer/runtime/state"
 	"github.com/xh3b4sd/wafer/service/informer"
-	"github.com/xh3b4sd/wafer/service/window"
 )
 
 // Config is the configuration used to create a new buyer.
@@ -66,35 +65,49 @@ type Buyer struct {
 }
 
 func (b *Buyer) Buy(price informer.Price) (bool, error) {
+	// state tracking
 	var err error
 	b.runtime.State.Chart.Window = append(b.runtime.State.Chart.Window, price)
-	b.runtime.State.Chart.Window, err = window.Calculate(b.runtime.State.Chart.Window, b.runtime.Config.Chart.Window)
-	if window.IsNotEnoughData(err) {
-		// In case there is not enough data yet, we cannot continue with the chart
-		// analyzation. So we return here and wait for the next events and proceed
-		// later, as soon as there is enough data for our algorithm.
-		return false, nil
-	} else if err != nil {
+	b.runtime.State.Chart.Window, err = calculateWindow(b.runtime.State.Chart.Window, b.runtime.Config.Chart.Window)
+	if err != nil {
 		return false, microerror.MaskAny(err)
 	}
 
 	prices := findLastSurge(b.runtime.State.Chart.Window, b.runtime.Config.Surge.Tolerance)
 
+	// state tracking
+	if b.runtime.State.Trade.Corridor.Max < price.Buy {
+		b.runtime.State.Trade.Corridor.Max = price.Buy
+	}
+
+	// rule checking
+	isOutsideCorridor, err := IsOutsideCorridor(price, b.runtime)
+	if err != nil {
+		return false, microerror.MaskAny(err)
+	}
+	if isOutsideCorridor {
+		return false, nil
+	}
+
+	// rule checking
 	surge := calculateSurgeAverage(prices)
 	if surge < b.runtime.Config.Surge.Min {
 		return false, nil
 	}
 
+	// rule checking
 	duration := calculateSurgeDuration(prices)
 	duration = duration + (time.Duration(duration.Seconds()*surge*surge/100) * time.Second)
 	if duration < b.runtime.Config.Surge.Duration.Min {
 		return false, nil
 	}
 
+	// rule checking
 	if !b.runtime.State.Trade.Buy.Last.IsZero() && b.runtime.State.Trade.Buy.Last.Add(b.runtime.Config.Trade.Pause.Min).Before(price.Time) {
 		return false, nil
 	}
 
+	// state tracking
 	b.runtime.State.Trade.Buy.Last = price.Time
 
 	return true, nil

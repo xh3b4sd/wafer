@@ -1,4 +1,4 @@
-package window
+package v1
 
 import (
 	"time"
@@ -6,7 +6,7 @@ import (
 	"github.com/xh3b4sd/wafer/service/informer"
 )
 
-func Calculate(histWindow []informer.Price, configWindow time.Duration) ([]informer.Price, error) {
+func calculateWindow(histWindow []informer.Price, configWindow time.Duration) ([]informer.Price, error) {
 	// We want to ensure the chart window is always up to date. To calculate the
 	// chart window we need at least 2 price events within the chart window.
 	// Otherwise we cannot judge about the left and right boundaries that
