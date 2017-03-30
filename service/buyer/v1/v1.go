@@ -1,8 +1,6 @@
 package v1
 
 import (
-	"time"
-
 	microerror "github.com/giantswarm/microkit/error"
 	micrologger "github.com/giantswarm/microkit/logger"
 
@@ -65,50 +63,43 @@ type Buyer struct {
 }
 
 func (b *Buyer) Buy(price informer.Price) (bool, error) {
-	// state tracking
-	var err error
-	b.runtime.State.Chart.Window = append(b.runtime.State.Chart.Window, price)
-	b.runtime.State.Chart.Window, err = calculateWindow(b.runtime.State.Chart.Window, b.runtime.Config.Chart.Window)
-	if err != nil {
-		return false, microerror.MaskAny(err)
+	// Here we want to track the state of the current situation before we execute
+	// the check functions. Note that the order of these functions is important.
+	// because the track functions partially on each other.
+	beforeTrackFuncs := []TrackFunc{
+		NewSetCurrentPrice(price),
+		SetChartWindow,
+		SetLastSurge,
+		SetMaxCorridor,
 	}
 
-	prices := findLastSurge(b.runtime.State.Chart.Window, b.runtime.Config.Surge.Tolerance)
-
-	// state tracking
-	if b.runtime.State.Trade.Corridor.Max < price.Buy {
-		b.runtime.State.Trade.Corridor.Max = price.Buy
+	for _, t := range beforeTrackFuncs {
+		r, err := t(b.runtime)
+		if err != nil {
+			return false, microerror.MaskAny(err)
+		}
+		b.runtime = r
 	}
 
-	// rule checking
-	isOutsideCorridor, err := IsOutsideCorridor(price, b.runtime)
-	if err != nil {
-		return false, microerror.MaskAny(err)
-	}
-	if isOutsideCorridor {
-		return false, nil
+	checkFuns := []CheckFunc{
+		IsAboveMaxTradeLimit,
+		IsUnderMinSurgeAngle,
+		IsUnderMinSurgeDuration,
+		IsUnderMinTradePause,
 	}
 
-	// rule checking
-	surge := calculateSurgeAverage(prices)
-	if surge < b.runtime.Config.Surge.Min {
-		return false, nil
-	}
-
-	// rule checking
-	duration := calculateSurgeDuration(prices)
-	duration = duration + (time.Duration(duration.Seconds()*surge*surge/100) * time.Second)
-	if duration < b.runtime.Config.Surge.Duration.Min {
-		return false, nil
-	}
-
-	// rule checking
-	if !b.runtime.State.Trade.Buy.Last.IsZero() && b.runtime.State.Trade.Buy.Last.Add(b.runtime.Config.Trade.Pause.Min).Before(price.Time) {
-		return false, nil
+	for _, c := range checkFuns {
+		ok, err := c(b.runtime)
+		if err != nil {
+			return false, microerror.MaskAny(err)
+		}
+		if ok {
+			return false, nil
+		}
 	}
 
 	// state tracking
-	b.runtime.State.Trade.Buy.Last = price.Time
+	b.runtime.State.Trade.Buy.Last = b.runtime.State.Trade.Price
 
 	return true, nil
 }

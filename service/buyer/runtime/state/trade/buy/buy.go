@@ -1,10 +1,10 @@
 package buy
 
 import (
-	"time"
+	"github.com/xh3b4sd/wafer/service/informer"
 )
 
 type Buy struct {
-	// Last is the point in time in which the last buy took place.
-	Last time.Time
+	// Last is the price event of the last buy that took place.
+	Last informer.Price
 }
