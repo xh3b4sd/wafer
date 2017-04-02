@@ -12,6 +12,7 @@ import (
 	"github.com/xh3b4sd/wafer/service/seller"
 	"github.com/xh3b4sd/wafer/service/trader"
 	"github.com/xh3b4sd/wafer/service/trader/runtime"
+	"github.com/xh3b4sd/wafer/service/trader/runtime/config"
 	"github.com/xh3b4sd/wafer/service/trader/runtime/state"
 )
 
@@ -23,6 +24,9 @@ type Config struct {
 	Informer informer.Informer
 	Logger   micrologger.Logger
 	Seller   seller.Seller
+
+	// Settings.
+	Runtime config.Config
 }
 
 // DefaultConfig returns the default configuration used to create a new trader
@@ -35,6 +39,9 @@ func DefaultConfig() Config {
 		Informer: nil,
 		Logger:   nil,
 		Seller:   nil,
+
+		// Settings.
+		Runtime: config.Config{},
 	}
 }
 
@@ -57,6 +64,12 @@ func New(config Config) (trader.Trader, error) {
 		return nil, microerror.MaskAnyf(invalidConfigError, "config.Seller must not be empty")
 	}
 
+	// Settings.
+	err := config.Runtime.Validate()
+	if err != nil {
+		return nil, microerror.MaskAnyf(invalidConfigError, err.Error())
+	}
+
 	newTrader := &Trader{
 		// Dependencies.
 		buyer:    config.Buyer,
@@ -67,7 +80,8 @@ func New(config Config) (trader.Trader, error) {
 
 		// Internals.
 		runtime: runtime.Runtime{
-			State: state.State{},
+			Config: config.Runtime,
+			State:  state.State{},
 		},
 	}
 
@@ -102,7 +116,7 @@ func (t *Trader) Execute() error {
 				if !isBuy {
 					continue
 				}
-				err = t.client.Buy(p)
+				err = t.client.Buy(p, calculateVolume(p.Sell, t.runtime.Config.Trade.Budget))
 				if err != nil {
 					return microerror.MaskAny(err)
 					continue
@@ -112,7 +126,7 @@ func (t *Trader) Execute() error {
 				buyPrice = p
 				isBuyEvent = false
 			} else {
-				isSell, err := t.seller.Sell(buyPrice, p)
+				isSell, err := t.seller.Sell(p, buyPrice)
 				if err != nil {
 					return microerror.MaskAny(err)
 				}
@@ -121,7 +135,7 @@ func (t *Trader) Execute() error {
 					continue
 				}
 
-				err = t.client.Sell(p)
+				err = t.client.Sell(p, calculateVolume(p.Sell, t.runtime.Config.Trade.Budget))
 				if err != nil {
 					return microerror.MaskAny(err)
 					continue

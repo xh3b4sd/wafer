@@ -1,17 +1,15 @@
 package config
 
 import (
-	"time"
-
 	microerror "github.com/giantswarm/microkit/error"
 	"github.com/spf13/cast"
 
 	permutationconfig "github.com/xh3b4sd/wafer/service/permutation/runtime/config"
-	"github.com/xh3b4sd/wafer/service/seller/runtime/config/trade"
+	"github.com/xh3b4sd/wafer/service/trader/runtime/config/trade"
 )
 
 const (
-	PermIDTradeDurationMin = "Trade.Duration.Min"
+	PermIDTradeBudget = "Trade.Budget"
 )
 
 type Config struct {
@@ -24,10 +22,10 @@ func (c *Config) GetPermConfigs() []permutationconfig.Config {
 
 	//
 	config = permutationconfig.Config{}
-	config.ID = PermIDTradeDurationMin
-	config.Min = 10 * time.Minute
-	config.Max = 24 * 2 * time.Hour
-	config.Step = 10 * time.Minute
+	config.ID = PermIDTradeBudget
+	config.Min = 100.0
+	config.Max = 1000.0
+	config.Step = 100.0
 	configs = append(configs, config)
 
 	return configs
@@ -35,12 +33,12 @@ func (c *Config) GetPermConfigs() []permutationconfig.Config {
 
 func (c *Config) SetPermValue(permID string, permValue interface{}) error {
 	switch permID {
-	case PermIDTradeDurationMin:
-		d, err := cast.ToDurationE(permValue)
+	case PermIDTradeBudget:
+		f, err := cast.ToFloat64E(permValue)
 		if err != nil {
 			return microerror.MaskAny(err)
 		}
-		c.Trade.Duration.Min = d
+		c.Trade.Budget = f
 	default:
 		return microerror.MaskAnyf(invalidExecutionError, "unknown permID '%s'", permID)
 	}

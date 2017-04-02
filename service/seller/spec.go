@@ -14,10 +14,10 @@ type Seller interface {
 	// Runtime returns a copy of information about the current runtime of the
 	// seller.
 	Runtime() runtime.Runtime
-	// Sell takes the actual buy price and the currently incoming price event to
-	// analyze the stock market situation to identify probabilities of sell
+	// Sell takes the actual the currently incoming price event and the buy price
+	// to analyze the stock market situation to identify probabilities of sell
 	// events. In case Sell returns true, a sell event is intended to happen. A
 	// sell event indicates that the watched stock market is suitable to sell
 	// commodities.
-	Sell(buyPrice, currentPrice informer.Price) (bool, error)
+	Sell(currentPrice, buyPrice informer.Price) (bool, error)
 }

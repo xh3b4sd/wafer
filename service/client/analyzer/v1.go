@@ -68,7 +68,7 @@ type Client struct {
 	sellChan chan informer.Price
 }
 
-func (c *Client) Buy(price informer.Price) error {
+func (c *Client) Buy(price informer.Price, volume float64) error {
 	c.buyChan <- price
 	return nil
 }
@@ -79,7 +79,7 @@ func (c *Client) Close() error {
 	return nil
 }
 
-func (c *Client) Sell(price informer.Price) error {
+func (c *Client) Sell(price informer.Price, volume float64) error {
 	c.sellChan <- price
 	return nil
 }

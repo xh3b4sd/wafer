@@ -39,6 +39,12 @@ func New(config Config) (seller.Seller, error) {
 		return nil, microerror.MaskAnyf(invalidConfigError, "config.Logger must not be empty")
 	}
 
+	// Settings.
+	err := config.Runtime.Validate()
+	if err != nil {
+		return nil, microerror.MaskAnyf(invalidConfigError, err.Error())
+	}
+
 	newSeller := &Seller{
 		// Dependencies.
 		logger: config.Logger,
@@ -66,15 +72,35 @@ func (s *Seller) Runtime() runtime.Runtime {
 	return s.runtime
 }
 
-func (s *Seller) Sell(buyPrice, currentPrice informer.Price) (bool, error) {
-	revenue := calculateRevenue(buyPrice.Buy, currentPrice.Sell, s.runtime.Config.Trade.Fee.Min)
-	if revenue < s.runtime.Config.Trade.Revenue.Min {
-		return false, nil
+func (s *Seller) Sell(currentPrice, buyPrice informer.Price) (bool, error) {
+	// Here we want to track the state of the current situation before we execute
+	// the check functions.
+	beforeTrackFuncs := []TrackFunc{
+		NewSetCurrentDuration(currentPrice, buyPrice),
+		NewSetCurrentRevenue(currentPrice, buyPrice),
 	}
 
-	duration := currentPrice.Time.Sub(buyPrice.Time)
-	if duration < s.runtime.Config.Trade.Duration.Min {
-		return false, nil
+	for _, t := range beforeTrackFuncs {
+		r, err := t(s.runtime)
+		if err != nil {
+			return false, microerror.MaskAny(err)
+		}
+		s.runtime = r
+	}
+
+	checkFuns := []CheckFunc{
+		IsBelowMinTradeDuration,
+		IsBelowMinTradeRevenue,
+	}
+
+	for _, c := range checkFuns {
+		ok, err := c(s.runtime)
+		if err != nil {
+			return false, microerror.MaskAny(err)
+		}
+		if ok {
+			return false, nil
+		}
 	}
 
 	return true, nil

@@ -126,3 +126,8 @@ func (c *Config) SetPermValue(permID string, permValue interface{}) error {
 
 	return nil
 }
+
+// TODO
+func (c Config) Validate() error {
+	return nil
+}

@@ -39,6 +39,12 @@ func New(config Config) (buyer.Buyer, error) {
 		return nil, microerror.MaskAnyf(invalidConfigError, "config.Logger must not be empty")
 	}
 
+	// Settings.
+	err := config.Runtime.Validate()
+	if err != nil {
+		return nil, microerror.MaskAnyf(invalidConfigError, err.Error())
+	}
+
 	newBuyer := &Buyer{
 		// Dependencies.
 		logger: config.Logger,
