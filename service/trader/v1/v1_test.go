@@ -11,14 +11,14 @@ func Test_Trader_Runtime_Copy(t *testing.T) {
 	tr := &Trader{}
 
 	r1 := tr.Runtime()
-	if r1.State.Trade.Revenue.Total != 0 {
-		t.Fatal("expected", 0, "got", r1.State.Trade.Revenue.Total)
+	if r1.State.Trade.Revenue != 0 {
+		t.Fatal("expected", 0, "got", r1.State.Trade.Revenue)
 	}
 
-	r1.State.Trade.Revenue.Total = 23.45
+	r1.State.Trade.Revenue = 23.45
 
 	r2 := tr.Runtime()
-	if r2.State.Trade.Revenue.Total != 0 {
-		t.Fatal("expected", 0, "got", r2.State.Trade.Revenue.Total)
+	if r2.State.Trade.Revenue != 0 {
+		t.Fatal("expected", 0, "got", r2.State.Trade.Revenue)
 	}
 }

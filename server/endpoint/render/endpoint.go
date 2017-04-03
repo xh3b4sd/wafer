@@ -18,8 +18,6 @@ import (
 	v1buyer "github.com/xh3b4sd/wafer/service/buyer/v1"
 	"github.com/xh3b4sd/wafer/service/client"
 	analyzerclient "github.com/xh3b4sd/wafer/service/client/analyzer"
-	"github.com/xh3b4sd/wafer/service/exchange"
-	analyzerexchange "github.com/xh3b4sd/wafer/service/exchange/analyzer"
 	"github.com/xh3b4sd/wafer/service/informer"
 	"github.com/xh3b4sd/wafer/service/informer/csv"
 	"github.com/xh3b4sd/wafer/service/seller"
@@ -183,25 +181,25 @@ func (e *Endpoint) Endpoint() kitendpoint.Endpoint {
 			}
 		}
 
-		var newExchange exchange.Exchange
-		{
-			config := analyzerexchange.DefaultConfig()
-			config.BuyChan = buyChan
-			config.Informer = newInformer
-			config.Logger = e.logger
-			config.SellChan = sellChan
-			newExchange, err = analyzerexchange.New(config)
-			if err != nil {
-				return nil, microerror.MaskAny(err)
-			}
-			defer newExchange.Close()
-		}
+		//		var newExchange exchange.Exchange
+		//		{
+		//			config := analyzerexchange.DefaultConfig()
+		//			config.BuyChan = buyChan
+		//			config.Informer = newInformer
+		//			config.Logger = e.logger
+		//			config.SellChan = sellChan
+		//			newExchange, err = analyzerexchange.New(config)
+		//			if err != nil {
+		//				return nil, microerror.MaskAny(err)
+		//			}
+		//			defer newExchange.Close()
+		//		}
 
-		go func() {
-			e.logger.Log("debug", "exchange started")
-			newExchange.Execute()
-			e.logger.Log("debug", "exchange stopped")
-		}()
+		//		go func() {
+		//			e.logger.Log("debug", "exchange started")
+		//			newExchange.Execute()
+		//			e.logger.Log("debug", "exchange stopped")
+		//		}()
 
 		e.logger.Log("debug", "trader started")
 		err = newTrader.Execute()
@@ -210,16 +208,16 @@ func (e *Endpoint) Endpoint() kitendpoint.Endpoint {
 		}
 		e.logger.Log("debug", "trader stopped")
 
-		e.logger.Log("debug", "rendering started")
-		buf, err := newExchange.Render()
-		if err != nil {
-			return nil, microerror.MaskAny(err)
-		}
-		e.logger.Log("debug", "rendering finished")
+		//		e.logger.Log("debug", "rendering started")
+		//		buf, err := newExchange.Render()
+		//		if err != nil {
+		//			return nil, microerror.MaskAny(err)
+		//		}
+		//		e.logger.Log("debug", "rendering finished")
 
-		e.logger.Log("debug", fmt.Sprintf("trader revenue: %.2f", newTrader.Runtime().State.Trade.Revenue.Total))
+		e.logger.Log("debug", fmt.Sprintf("trader revenue: %.2f", newTrader.Runtime().State.Trade.Revenue))
 
-		return buf, nil
+		return nil, nil
 	}
 }
 

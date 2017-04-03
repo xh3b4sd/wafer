@@ -94,7 +94,7 @@ func New(config Config) (permutation.Permutation, error) {
 		object: config.Object,
 
 		// Internals.
-		max:   maxFromConfigs(config.Object.GetPermConfigs()),
+		max:   MaxFromConfigs(config.Object.GetPermConfigs()),
 		perms: perms,
 	}
 

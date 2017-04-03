@@ -116,7 +116,7 @@ func (t *Trader) Execute() error {
 				if !isBuy {
 					continue
 				}
-				err = t.client.Buy(p, calculateVolume(p.Sell, t.runtime.Config.Trade.Budget))
+				err = t.client.Buy(p, calculateVolume(p.Buy, t.runtime.Config.Trade.Budget))
 				if err != nil {
 					return microerror.MaskAny(err)
 					continue
@@ -135,14 +135,15 @@ func (t *Trader) Execute() error {
 					continue
 				}
 
-				err = t.client.Sell(p, calculateVolume(p.Sell, t.runtime.Config.Trade.Budget))
+				v := calculateVolume(p.Sell, t.runtime.Config.Trade.Budget)
+				err = t.client.Sell(p, v)
 				if err != nil {
 					return microerror.MaskAny(err)
 					continue
 				}
 				t.logger.Log("event", "sell", "price", fmt.Sprintf("%.2f", p.Sell))
 
-				t.runtime.State.Trade.Revenue.Total += p.Sell - buyPrice.Buy
+				t.runtime.State.Trade.Revenue += (p.Sell * v) - (buyPrice.Buy * v)
 				isBuyEvent = true
 			}
 		}

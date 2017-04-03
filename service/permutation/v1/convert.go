@@ -5,11 +5,14 @@ import (
 	"strings"
 	"time"
 
-	microerror "github.com/giantswarm/microkit/error"
 	"github.com/spf13/cast"
 
 	"github.com/xh3b4sd/wafer/service/permutation/runtime/config"
 )
+
+func IndizesFromConfigs(configs []config.Config) []int {
+	return make([]int, len(configs))
+}
 
 func IndizesToIndex(indizes []int) int {
 	l := intsToStrings(indizes)
@@ -22,51 +25,16 @@ func IndizesToIndex(indizes []int) int {
 	return i
 }
 
-func IndexToIndizes(index int) []int {
-	s := cast.ToString(index)
-	l := strings.Split(s, "")
-	i, err := stringsToInts(l)
-	if err != nil {
-		panic(err)
-	}
-
-	return i
-}
-
-func intsToStrings(ints []int) []string {
-	var s []string
-
-	for _, i := range ints {
-		s = append(s, cast.ToString(i))
-	}
-
-	return s
-}
-
-func stringsToInts(strings []string) ([]int, error) {
-	var i []int
-
-	for _, s := range strings {
-		n, err := cast.ToIntE(s)
-		if err != nil {
-			return nil, microerror.MaskAny(err)
-		}
-		i = append(i, n)
-	}
-
-	return i, nil
-}
-
-// maxFromConfigs creates a slice of numbers representing the maximum boundaries
+// MaxFromConfigs creates a slice of numbers representing the maximum boundaries
 // for shift permutations. Here the origin for the shift permutation is the list
 // of permutation configs.
 //
-// NOTE maxFromConfigs converts several types to instances of type int. In case
-// the original type exceeds the memory capacity of an int, maxFromConfigs
-// returns the wrong result. Thus maxFromConfigs should only be used on maximum
+// NOTE MaxFromConfigs converts several types to instances of type int. In case
+// the original type exceeds the memory capacity of an int, MaxFromConfigs
+// returns the wrong result. Thus MaxFromConfigs should only be used on maximum
 // values that do not exceed the maximum memory capacity of int. This is
 // 1705032704.
-func maxFromConfigs(configs []config.Config) []int {
+func MaxFromConfigs(configs []config.Config) []int {
 	var max []int
 
 	for _, c := range configs {
@@ -93,4 +61,14 @@ func maxFromConfigs(configs []config.Config) []int {
 	}
 
 	return max
+}
+
+func intsToStrings(ints []int) []string {
+	var s []string
+
+	for _, i := range ints {
+		s = append(s, cast.ToString(i))
+	}
+
+	return s
 }

@@ -15,6 +15,7 @@ type Config struct {
 
 	// Settings.
 	BuyChan  chan informer.Price
+	Discard  bool
 	SellChan chan informer.Price
 }
 
@@ -27,6 +28,7 @@ func DefaultConfig() Config {
 
 		// Settings.
 		BuyChan:  nil,
+		Discard:  false,
 		SellChan: nil,
 	}
 }
@@ -52,6 +54,7 @@ func New(config Config) (client.Client, error) {
 
 		// Settings.
 		buyChan:  config.BuyChan,
+		discard:  config.Discard,
 		sellChan: config.SellChan,
 	}
 
@@ -65,11 +68,15 @@ type Client struct {
 
 	// Settings.
 	buyChan  chan informer.Price
+	discard  bool
 	sellChan chan informer.Price
 }
 
 func (c *Client) Buy(price informer.Price, volume float64) error {
-	c.buyChan <- price
+	if !c.discard {
+		c.buyChan <- price
+	}
+
 	return nil
 }
 
@@ -80,6 +87,9 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) Sell(price informer.Price, volume float64) error {
-	c.sellChan <- price
+	if !c.discard {
+		c.sellChan <- price
+	}
+
 	return nil
 }
