@@ -13,7 +13,7 @@ import (
 type Analyzer interface {
 	// Execute runs the exchange continuously and blocks until the configured
 	// client does not provide any further price events.
-	Execute() error
+	Execute()
 	// Runtime returns a copy of the current statistical information about the
 	// current analyzer process.
 	Runtime() runtime.Runtime

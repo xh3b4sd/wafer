@@ -8,6 +8,10 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/xh3b4sd/wafer/flag"
+	"github.com/xh3b4sd/wafer/service/analyzer"
+	v1analyzer "github.com/xh3b4sd/wafer/service/analyzer/v1"
+	"github.com/xh3b4sd/wafer/service/informer"
+	"github.com/xh3b4sd/wafer/service/informer/csv"
 	"github.com/xh3b4sd/wafer/service/version"
 )
 
@@ -56,6 +60,31 @@ func New(config Config) (*Service, error) {
 
 	var err error
 
+	var informerService informer.Informer
+	{
+		informerConfig := csv.DefaultConfig()
+		informerConfig.File.Header.Buy = 1
+		informerConfig.File.Header.Ignore = false
+		informerConfig.File.Header.Sell = 2
+		informerConfig.File.Header.Time = 0
+		informerConfig.File.Path = "/Users/xh3b4sd/go/src/github.com/xh3b4sd/wafer/charts/002/chart.csv"
+		informerService, err = csv.New(informerConfig)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
+	}
+
+	var analyzerService analyzer.Analyzer
+	{
+		analyzerConfig := v1analyzer.DefaultConfig()
+		analyzerConfig.Informer = informerService
+		analyzerConfig.Logger = config.Logger
+		analyzerService, err = v1analyzer.New(analyzerConfig)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
+	}
+
 	var versionService *version.Service
 	{
 		versionConfig := version.DefaultConfig()
@@ -74,12 +103,14 @@ func New(config Config) (*Service, error) {
 	}
 
 	newService := &Service{
-		Version: versionService,
+		Analyzer: analyzerService,
+		Version:  versionService,
 	}
 
 	return newService, nil
 }
 
 type Service struct {
-	Version *version.Service
+	Analyzer analyzer.Analyzer
+	Version  *version.Service
 }

@@ -17,5 +17,5 @@ type Chart struct {
 	//
 	//    <--------------- complete chart history --------------->
 	//
-	Window time.Duration
+	Window time.Duration `json:"window"`
 }

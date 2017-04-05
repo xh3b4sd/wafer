@@ -7,9 +7,9 @@ import (
 )
 
 type Config struct {
-	Chart chart.Chart
-	Surge surge.Surge
-	Trade trade.Trade
+	Chart chart.Chart `json:"chart"`
+	Surge surge.Surge `json:"surge"`
+	Trade trade.Trade `json:"trade"`
 }
 
 // TODO

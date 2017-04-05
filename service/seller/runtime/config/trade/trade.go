@@ -7,7 +7,7 @@ import (
 )
 
 type Trade struct {
-	Duration duration.Duration
-	Fee      fee.Fee
-	Revenue  revenue.Revenue
+	Duration duration.Duration `json:"duration"`
+	Fee      fee.Fee           `json:"fee"`
+	Revenue  revenue.Revenue   `json:"revenue"`
 }

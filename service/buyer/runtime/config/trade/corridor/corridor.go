@@ -11,5 +11,5 @@ package corridor
 // is taken from the observed chart window.
 type Corridor struct {
 	// Max is the maximum value within the allowed corridor.
-	Max float64
+	Max float64 `json:"max"`
 }

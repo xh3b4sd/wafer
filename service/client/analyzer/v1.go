@@ -15,7 +15,6 @@ type Config struct {
 
 	// Settings.
 	BuyChan  chan informer.Price
-	Discard  bool
 	SellChan chan informer.Price
 }
 
@@ -28,7 +27,6 @@ func DefaultConfig() Config {
 
 		// Settings.
 		BuyChan:  nil,
-		Discard:  false,
 		SellChan: nil,
 	}
 }
@@ -40,21 +38,12 @@ func New(config Config) (client.Client, error) {
 		return nil, microerror.MaskAnyf(invalidConfigError, "config.Logger must not be empty")
 	}
 
-	// Settings.
-	if config.BuyChan == nil {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.BuyChan must not be empty")
-	}
-	if config.SellChan == nil {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.SellChan must not be empty")
-	}
-
 	newClient := &Client{
 		// Dependencies.
 		logger: config.Logger,
 
 		// Settings.
 		buyChan:  config.BuyChan,
-		discard:  config.Discard,
 		sellChan: config.SellChan,
 	}
 
@@ -68,12 +57,11 @@ type Client struct {
 
 	// Settings.
 	buyChan  chan informer.Price
-	discard  bool
 	sellChan chan informer.Price
 }
 
 func (c *Client) Buy(price informer.Price, volume float64) error {
-	if !c.discard {
+	if c.buyChan != nil {
 		c.buyChan <- price
 	}
 
@@ -81,13 +69,19 @@ func (c *Client) Buy(price informer.Price, volume float64) error {
 }
 
 func (c *Client) Close() error {
-	close(c.buyChan)
-	close(c.sellChan)
+	if c.buyChan != nil {
+		close(c.buyChan)
+	}
+
+	if c.sellChan != nil {
+		close(c.sellChan)
+	}
+
 	return nil
 }
 
 func (c *Client) Sell(price informer.Price, volume float64) error {
-	if !c.discard {
+	if c.sellChan != nil {
 		c.sellChan <- price
 	}
 

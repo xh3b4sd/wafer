@@ -6,6 +6,6 @@ import (
 )
 
 type Trade struct {
-	Corridor corridor.Corridor
-	Pause    pause.Pause
+	Corridor corridor.Corridor `json:"corridor"`
+	Pause    pause.Pause       `json:"pause"`
 }

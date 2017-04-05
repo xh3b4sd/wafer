@@ -105,6 +105,11 @@ func (t *Trader) Execute() error {
 	buyPrice := informer.Price{}
 	isBuyEvent := true
 
+	// TODO support multiple buys
+	//
+	//     - always execute buyer
+	//     - execute seller for each buy-price we collected through the buyer's
+	//       decision
 	for _, c := range t.informer.Prices() {
 		for p := range c {
 			if isBuyEvent {

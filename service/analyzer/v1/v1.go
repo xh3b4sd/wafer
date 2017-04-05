@@ -1,7 +1,10 @@
 package v1
 
 import (
+	"fmt"
 	"reflect"
+	"sync"
+	"time"
 
 	microerror "github.com/giantswarm/microkit/error"
 	micrologger "github.com/giantswarm/microkit/logger"
@@ -10,7 +13,7 @@ import (
 	"github.com/xh3b4sd/wafer/service/analyzer/runtime"
 	runtimeconfig "github.com/xh3b4sd/wafer/service/analyzer/runtime/config"
 	runtimestate "github.com/xh3b4sd/wafer/service/analyzer/runtime/state"
-	statehistory "github.com/xh3b4sd/wafer/service/analyzer/runtime/state/history"
+	statehistory "github.com/xh3b4sd/wafer/service/analyzer/runtime/state/config/history"
 	"github.com/xh3b4sd/wafer/service/buyer"
 	v1buyer "github.com/xh3b4sd/wafer/service/buyer/v1"
 	"github.com/xh3b4sd/wafer/service/client"
@@ -27,9 +30,8 @@ import (
 // Config is the configuration used to create a new analyzer.
 type Config struct {
 	// Dependencies.
-	Informer    informer.Informer
-	Logger      micrologger.Logger
-	Permutation permutation.Permutation
+	Informer informer.Informer
+	Logger   micrologger.Logger
 }
 
 // DefaultConfig returns the default configuration used to create a new analyzer
@@ -37,9 +39,8 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		// Dependencies.
-		Informer:    nil,
-		Logger:      nil,
-		Permutation: nil,
+		Informer: nil,
+		Logger:   nil,
 	}
 }
 
@@ -52,30 +53,34 @@ func New(config Config) (analyzer.Analyzer, error) {
 	if config.Logger == nil {
 		return nil, microerror.MaskAnyf(invalidConfigError, "config.Logger must not be empty")
 	}
-	if config.Permutation == nil {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.Permutation must not be empty")
+
+	runtimeConfig := &runtimeconfig.Config{}
+
+	var newPermutation permutation.Permutation
+	var err error
+	{
+		config := v1permutation.DefaultConfig()
+		config.Logger = config.Logger
+		config.Object = runtimeConfig
+		newPermutation, err = v1permutation.New(config)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
 	}
 
 	newAnalyzer := &Analyzer{
 		// Dependencies.
-		informer:    config.Informer,
-		logger:      config.Logger,
-		permutation: config.Permutation,
+		informer: config.Informer,
+		logger:   config.Logger,
 
 		// Internals.
+		analyzeOnce: sync.Once{},
+		permutation: newPermutation,
 		runtime: runtime.Runtime{
-			Config: &runtimeconfig.Config{},
+			Config: runtimeConfig,
 			State:  runtimestate.State{},
 		},
-
-		// Settings.
-		buys:  []informer.Price{},
-		sells: []informer.Price{},
 	}
-
-	// Initilized empty history record with zero values. The algorithm below
-	// requires this initialization.
-	newAnalyzer.runtime.State.Config.History = append(newAnalyzer.runtime.State.Config.History, statehistory.History{})
 
 	return newAnalyzer, nil
 }
@@ -83,24 +88,48 @@ func New(config Config) (analyzer.Analyzer, error) {
 // Analyzer implements analyzer.Analyzer.
 type Analyzer struct {
 	// Dependencies.
-	informer    informer.Informer
-	logger      micrologger.Logger
-	permutation permutation.Permutation
+	informer informer.Informer
+	logger   micrologger.Logger
 
 	// Internals.
-	runtime runtime.Runtime
-
-	// Settings.
-	buys  []informer.Price
-	sells []informer.Price
+	analyzeOnce sync.Once
+	permutation permutation.Permutation
+	runtime     runtime.Runtime
 }
 
-func (a *Analyzer) Execute() error {
+func (a *Analyzer) Execute() {
+	a.analyzeOnce.Do(func() {
+		err := a.execute()
+		if err != nil {
+			a.logger.Log("error", fmt.Sprintf("%#v", err))
+		}
+	})
+}
+
+func (a *Analyzer) Runtime() runtime.Runtime {
+	return a.runtime
+}
+
+func (a *Analyzer) execute() error {
 	indizes := v1permutation.IndizesFromConfigs(a.runtime.Config.GetPermConfigs())
 	zeroIndizes := v1permutation.IndizesFromConfigs(a.runtime.Config.GetPermConfigs())
 	max := v1permutation.MaxFromConfigs(a.runtime.Config.GetPermConfigs())
+	stepDuration := &Duration{}
+
+	var stepCurrent float64
+	a.runtime.State.Permutation.Max = max
+	a.runtime.State.Permutation.Start = time.Now()
+	a.runtime.State.Permutation.Step.Total = v1permutation.TotalFromMax(max)
 
 	for {
+		var stepStart time.Time
+		{
+			stepStart = time.Now()
+			stepCurrent++
+			a.runtime.State.Permutation.Step.Current = stepCurrent
+			a.runtime.State.Permutation.Indizes = indizes
+		}
+
 		permConfig, err := a.permutation.ValueFor(indizes)
 		if err != nil {
 			return microerror.MaskAny(err)
@@ -124,7 +153,6 @@ func (a *Analyzer) Execute() error {
 		var newClient client.Client
 		{
 			config := analyzerclient.DefaultConfig()
-			config.Discard = true
 			config.Logger = a.logger
 			newClient, err = analyzerclient.New(config)
 			if err != nil {
@@ -165,7 +193,7 @@ func (a *Analyzer) Execute() error {
 		}
 
 		revenue := newTrader.Runtime().State.Trade.Revenue
-		if a.runtime.State.Config.History[0].Revenue < revenue {
+		if (len(a.runtime.State.Config.History) == 0 && revenue > 0) || (len(a.runtime.State.Config.History) > 0 && a.runtime.State.Config.History[0].Revenue < revenue) {
 			history := statehistory.History{
 				Config:  *runtimeConfig,
 				Indizes: append([]int{}, indizes...), // copy
@@ -179,18 +207,25 @@ func (a *Analyzer) Execute() error {
 			return microerror.MaskAny(err)
 		}
 
+		{
+			stepEnd := time.Now()
+			stepDuration.Add(stepEnd.Sub(stepStart))
+			a.runtime.State.Permutation.Progress = fmt.Sprintf("%.3f", a.runtime.State.Permutation.Step.Current*100/a.runtime.State.Permutation.Step.Total)
+			a.runtime.State.Permutation.Step.Duration = fmt.Sprintf("%.3fs", stepDuration.Average().Seconds())
+			a.runtime.State.Permutation.End = a.eta(stepDuration.Average())
+		}
+
 		if reflect.DeepEqual(indizes, zeroIndizes) {
 			break
 		}
 	}
 
-	// TODO track duration of iterations in runtime state
-
-	// TODO track calculated execution progress in runtime state
-
 	return nil
 }
 
-func (a *Analyzer) Runtime() runtime.Runtime {
-	return a.runtime
+func (a *Analyzer) eta(stepDuration time.Duration) time.Time {
+	dur := time.Duration(a.runtime.State.Permutation.Step.Total-a.runtime.State.Permutation.Step.Current) * stepDuration
+	eta := time.Now().Add(dur)
+
+	return eta
 }

@@ -6,5 +6,5 @@ type Fee struct {
 	// be respected for buy and sell events, which means that this number
 	// represents the fee payed twice. E.g. when the fee for buy and sell events
 	// is 1.49% each, the fee the seller must respect is 2.98%.
-	Min float64
+	Min float64 `json:"min"`
 }

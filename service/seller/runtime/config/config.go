@@ -5,7 +5,7 @@ import (
 )
 
 type Config struct {
-	Trade trade.Trade
+	Trade trade.Trade `json:"trade"`
 }
 
 // TODO

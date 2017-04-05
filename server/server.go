@@ -77,6 +77,8 @@ func New(config Config) (microserver.Server, error) {
 
 	// Apply internals to the micro server config.
 	newServer.config.Endpoints = []microserver.Endpoint{
+		endpointCollection.Analyze.Create,
+		endpointCollection.Analyze.Search,
 		endpointCollection.Render,
 		endpointCollection.Version,
 	}

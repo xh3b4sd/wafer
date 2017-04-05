@@ -29,9 +29,9 @@ const (
 )
 
 type Config struct {
-	Buyer  buyerconfig.Config
-	Seller sellerconfig.Config
-	Trader traderconfig.Config
+	Buyer  buyerconfig.Config  `json:"buyer"`
+	Seller sellerconfig.Config `json:"seller"`
+	Trader traderconfig.Config `json:"trader"`
 }
 
 func (c *Config) GetPermConfigs() []permutationconfig.Config {
@@ -47,31 +47,31 @@ func (c *Config) GetPermConfigs() []permutationconfig.Config {
 	config.ID = PermIDBuyerChartWindow
 	config.Min = 24 * time.Hour
 	config.Max = 24 * 30 * 12 * time.Hour
-	config.Step = 24 * 30 * time.Hour
+	config.Step = 24 * 30 * 6 * time.Hour
 	configs = append(configs, config)
 
 	//
 	config = permutationconfig.Config{}
 	config.ID = PermIDBuyerSurgeDurationMin
-	config.Min = 10 * time.Second
+	config.Min = 0 * time.Second
 	config.Max = 6 * time.Hour
-	config.Step = 5 * time.Second
+	config.Step = 1 * time.Hour
 	configs = append(configs, config)
 
 	//
 	config = permutationconfig.Config{}
 	config.ID = PermIDBuyerSurgeMin
-	config.Min = 0.05
+	config.Min = 0.2
 	config.Max = 5.0
-	config.Step = 0.05
+	config.Step = 0.2
 	configs = append(configs, config)
 
 	//
 	config = permutationconfig.Config{}
 	config.ID = PermIDBuyerSurgeTolerance
-	config.Min = 0.05
+	config.Min = 0.2
 	config.Max = 5.0
-	config.Step = 0.05
+	config.Step = 0.2
 	configs = append(configs, config)
 
 	//
@@ -79,13 +79,13 @@ func (c *Config) GetPermConfigs() []permutationconfig.Config {
 	config.ID = PermIDBuyerTradeCorridorMax
 	config.Min = 75.0
 	config.Max = 100.0
-	config.Step = 0.5
+	config.Step = 1.0
 	configs = append(configs, config)
 
 	//
 	config = permutationconfig.Config{}
 	config.ID = PermIDBuyerTradePauseMin
-	config.Min = 0
+	config.Min = 0 * time.Hour
 	config.Max = 24 * time.Hour
 	config.Step = 1 * time.Hour
 	configs = append(configs, config)
@@ -97,9 +97,9 @@ func (c *Config) GetPermConfigs() []permutationconfig.Config {
 	//
 	config = permutationconfig.Config{}
 	config.ID = PermIDSellerTradeDurationMin
-	config.Min = 10 * time.Minute
+	config.Min = 2 * time.Hour
 	config.Max = 24 * 2 * time.Hour
-	config.Step = 10 * time.Minute
+	config.Step = 2 * time.Hour
 	configs = append(configs, config)
 
 	//

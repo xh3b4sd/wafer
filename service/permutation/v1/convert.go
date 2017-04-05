@@ -42,14 +42,15 @@ func MaxFromConfigs(configs []config.Config) []int {
 
 		switch c.Min.(type) {
 		case time.Duration:
-			d := (cast.ToDuration(c.Max) / cast.ToDuration(c.Step))
+			d := ((cast.ToDuration(c.Max) - cast.ToDuration(c.Min)) / cast.ToDuration(c.Step))
 			if cast.ToDuration(c.Min) == 0 {
 				m = int(d)
 			} else {
 				m = int(d) - 1
 			}
 		case float64:
-			f := (cast.ToFloat64(c.Max) / cast.ToFloat64(c.Step))
+			// TODO test that min is respected
+			f := ((cast.ToFloat64(c.Max) - cast.ToFloat64(c.Min)) / cast.ToFloat64(c.Step))
 			if cast.ToFloat64(c.Min) == 0 {
 				m = int(f)
 			} else {
@@ -61,6 +62,16 @@ func MaxFromConfigs(configs []config.Config) []int {
 	}
 
 	return max
+}
+
+func TotalFromMax(max []int) float64 {
+	total := float64(1)
+
+	for _, m := range max {
+		total *= float64(m + 1)
+	}
+
+	return total
 }
 
 func intsToStrings(ints []int) []string {

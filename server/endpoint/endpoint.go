@@ -4,6 +4,7 @@ import (
 	microerror "github.com/giantswarm/microkit/error"
 	micrologger "github.com/giantswarm/microkit/logger"
 
+	"github.com/xh3b4sd/wafer/server/endpoint/analyze"
 	"github.com/xh3b4sd/wafer/server/endpoint/render"
 	"github.com/xh3b4sd/wafer/server/endpoint/version"
 	"github.com/xh3b4sd/wafer/server/middleware"
@@ -33,6 +34,18 @@ func DefaultConfig() Config {
 func New(config Config) (*Endpoint, error) {
 	var err error
 
+	var analyzeEndpoint *analyze.Endpoint
+	{
+		analyzeConfig := analyze.DefaultConfig()
+		analyzeConfig.Logger = config.Logger
+		analyzeConfig.Middleware = config.Middleware
+		analyzeConfig.Service = config.Service
+		analyzeEndpoint, err = analyze.New(analyzeConfig)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
+	}
+
 	var renderEndpoint *render.Endpoint
 	{
 		renderConfig := render.DefaultConfig()
@@ -58,6 +71,7 @@ func New(config Config) (*Endpoint, error) {
 	}
 
 	newEndpoint := &Endpoint{
+		Analyze: analyzeEndpoint,
 		Render:  renderEndpoint,
 		Version: versionEndpoint,
 	}
@@ -67,6 +81,7 @@ func New(config Config) (*Endpoint, error) {
 
 // Endpoint is the endpoint collection.
 type Endpoint struct {
+	Analyze *analyze.Endpoint
 	Render  *render.Endpoint
 	Version *version.Endpoint
 }
