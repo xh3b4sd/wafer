@@ -16,6 +16,10 @@ type Buyer interface {
 	// event is intended to happen. A buy event indicates that the watched stock
 	// market is suitable to buy commodities.
 	Buy(price informer.Price) (bool, error)
+	// DecrTradeConcurrent is to make the buyer aware of an sell event which implies
+	// that the buyer must decrement the internal state counter of the number of
+	// concurrent buy events.
+	DecrTradeConcurrent()
 	// Runtime returns a copy of information about the current runtime of the
 	// buyer.
 	Runtime() runtime.Runtime

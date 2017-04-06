@@ -23,13 +23,18 @@ type Config struct {
 // DefaultConfig returns the default configuration used to create a new buyer
 // by best effort.
 func DefaultConfig() Config {
-	return Config{
+	runtimeConfig := config.Config{}
+	runtimeConfig.Trade.Concurrent = 3
+
+	config := Config{
 		// Dependencies.
 		Logger: nil,
 
 		// Settings.
-		Runtime: config.Config{},
+		Runtime: runtimeConfig,
 	}
+
+	return config
 }
 
 // New creates a new configured buyer.
@@ -74,8 +79,6 @@ func (b *Buyer) Buy(price informer.Price) (bool, error) {
 	// because the track functions partially on each other.
 	beforeTrackFuncs := []TrackFunc{
 		NewSetCurrentPrice(price),
-		SetChartWindow,
-		SetLastSurge,
 		SetMaxCorridor,
 	}
 
@@ -88,10 +91,9 @@ func (b *Buyer) Buy(price informer.Price) (bool, error) {
 	}
 
 	checkFuns := []CheckFunc{
-		IsAboveMaxTradeLimit,
-		IsUnderMinSurgeAngle,
-		IsUnderMinSurgeDuration,
-		IsUnderMinTradePause,
+		IsAboveMaxBuys,
+		IsOutsideMaxCorridor,
+		IsInsideMinTradePause,
 	}
 
 	for _, c := range checkFuns {
@@ -105,9 +107,14 @@ func (b *Buyer) Buy(price informer.Price) (bool, error) {
 	}
 
 	// state tracking
-	b.runtime.State.Trade.Buy.Last = b.runtime.State.Trade.Price
+	b.runtime.State.Trade.Concurrent++
+	b.runtime.State.Trade.Price.Last = b.runtime.State.Trade.Price.Current
 
 	return true, nil
+}
+
+func (b *Buyer) DecrTradeConcurrent() {
+	b.runtime.State.Trade.Concurrent--
 }
 
 func (b *Buyer) Runtime() runtime.Runtime {

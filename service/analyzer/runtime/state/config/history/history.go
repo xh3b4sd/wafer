@@ -5,7 +5,8 @@ import (
 )
 
 type History struct {
-	Config  config.Config `json:"config"`
-	Indizes []int         `json:"indizes"`
-	Revenue float64       `json:"revenue"`
+	Config   config.Config `json:"config"`
+	Cycles   []int64       `json:"cycles"`
+	Indizes  []int         `json:"indizes"`
+	Revenues []float64     `json:"revenues"`
 }

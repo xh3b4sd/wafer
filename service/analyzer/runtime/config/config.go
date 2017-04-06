@@ -9,29 +9,21 @@ import (
 	buyerconfig "github.com/xh3b4sd/wafer/service/buyer/runtime/config"
 	permutationconfig "github.com/xh3b4sd/wafer/service/permutation/runtime/config"
 	sellerconfig "github.com/xh3b4sd/wafer/service/seller/runtime/config"
-	traderconfig "github.com/xh3b4sd/wafer/service/trader/runtime/config"
 )
 
 const (
 	// Buyer.
-	PermIDBuyerChartWindow      = "Buyer.Chart.Window"
-	PermIDBuyerSurgeDurationMin = "Buyer.Surge.Duration.Min"
-	PermIDBuyerSurgeMin         = "Buyer.Surge.Min"
-	PermIDBuyerSurgeTolerance   = "Buyer.Surge.Tolerance"
 	PermIDBuyerTradeCorridorMax = "Buyer.Trade.Corridor.Max"
 	PermIDBuyerTradePauseMin    = "Buyer.Trade.Pause.Min"
 
 	// Seller.
 	PermIDSellerTradeDurationMin = "Seller.Trade.Duration.Min"
-
-	// Trader.
-	PermIDTraderTradeBudget = "Trader.Trade.Budget"
+	PermIDSellerTradeRevenueMin  = "Seller.Trade.Revenue.Min"
 )
 
 type Config struct {
 	Buyer  buyerconfig.Config  `json:"buyer"`
 	Seller sellerconfig.Config `json:"seller"`
-	Trader traderconfig.Config `json:"trader"`
 }
 
 func (c *Config) GetPermConfigs() []permutationconfig.Config {
@@ -44,50 +36,18 @@ func (c *Config) GetPermConfigs() []permutationconfig.Config {
 
 	//
 	config = permutationconfig.Config{}
-	config.ID = PermIDBuyerChartWindow
-	config.Min = 24 * time.Hour
-	config.Max = 24 * 30 * 12 * time.Hour
-	config.Step = 24 * 30 * 6 * time.Hour
-	configs = append(configs, config)
-
-	//
-	config = permutationconfig.Config{}
-	config.ID = PermIDBuyerSurgeDurationMin
-	config.Min = 0 * time.Second
-	config.Max = 6 * time.Hour
-	config.Step = 1 * time.Hour
-	configs = append(configs, config)
-
-	//
-	config = permutationconfig.Config{}
-	config.ID = PermIDBuyerSurgeMin
-	config.Min = 0.2
-	config.Max = 5.0
-	config.Step = 0.2
-	configs = append(configs, config)
-
-	//
-	config = permutationconfig.Config{}
-	config.ID = PermIDBuyerSurgeTolerance
-	config.Min = 0.2
-	config.Max = 5.0
-	config.Step = 0.2
-	configs = append(configs, config)
-
-	//
-	config = permutationconfig.Config{}
 	config.ID = PermIDBuyerTradeCorridorMax
-	config.Min = 75.0
+	config.Min = 98.0
 	config.Max = 100.0
-	config.Step = 1.0
+	config.Step = 0.2
 	configs = append(configs, config)
 
 	//
 	config = permutationconfig.Config{}
 	config.ID = PermIDBuyerTradePauseMin
-	config.Min = 0 * time.Hour
-	config.Max = 24 * time.Hour
-	config.Step = 1 * time.Hour
+	config.Min = 2 * time.Hour
+	config.Max = 4 * time.Hour
+	config.Step = 15 * time.Minute
 	configs = append(configs, config)
 
 	//
@@ -97,21 +57,17 @@ func (c *Config) GetPermConfigs() []permutationconfig.Config {
 	//
 	config = permutationconfig.Config{}
 	config.ID = PermIDSellerTradeDurationMin
-	config.Min = 2 * time.Hour
-	config.Max = 24 * 2 * time.Hour
-	config.Step = 2 * time.Hour
+	config.Min = 6 * time.Hour
+	config.Max = 24 * time.Hour
+	config.Step = 3 * time.Hour
 	configs = append(configs, config)
 
 	//
-	// Trader.
-	//
-
-	//
 	config = permutationconfig.Config{}
-	config.ID = PermIDTraderTradeBudget
-	config.Min = 100.0
-	config.Max = 1000.0
-	config.Step = 100.0
+	config.ID = PermIDSellerTradeRevenueMin
+	config.Min = 2.0
+	config.Max = 5.0
+	config.Step = 0.2
 	configs = append(configs, config)
 
 	return configs
@@ -122,30 +78,6 @@ func (c *Config) SetPermValue(permID string, permValue interface{}) error {
 	//
 	// Buyer.
 	//
-	case PermIDBuyerChartWindow:
-		d, err := cast.ToDurationE(permValue)
-		if err != nil {
-			return microerror.MaskAny(err)
-		}
-		c.Buyer.Chart.Window = d
-	case PermIDBuyerSurgeDurationMin:
-		d, err := cast.ToDurationE(permValue)
-		if err != nil {
-			return microerror.MaskAny(err)
-		}
-		c.Buyer.Surge.Duration.Min = d
-	case PermIDBuyerSurgeMin:
-		f, err := cast.ToFloat64E(permValue)
-		if err != nil {
-			return microerror.MaskAny(err)
-		}
-		c.Buyer.Surge.Min = f
-	case PermIDBuyerSurgeTolerance:
-		f, err := cast.ToFloat64E(permValue)
-		if err != nil {
-			return microerror.MaskAny(err)
-		}
-		c.Buyer.Surge.Tolerance = f
 	case PermIDBuyerTradeCorridorMax:
 		f, err := cast.ToFloat64E(permValue)
 		if err != nil {
@@ -167,15 +99,12 @@ func (c *Config) SetPermValue(permID string, permValue interface{}) error {
 			return microerror.MaskAny(err)
 		}
 		c.Seller.Trade.Duration.Min = d
-	//
-	// Trader.
-	//
-	case PermIDTraderTradeBudget:
+	case PermIDSellerTradeRevenueMin:
 		f, err := cast.ToFloat64E(permValue)
 		if err != nil {
 			return microerror.MaskAny(err)
 		}
-		c.Trader.Trade.Budget = f
+		c.Seller.Trade.Revenue.Min = f
 	default:
 		return microerror.MaskAnyf(invalidExecutionError, "unknown permID '%s'", permID)
 	}
@@ -191,10 +120,6 @@ func (c *Config) Validate() error {
 		return microerror.MaskAny(err)
 	}
 	err = c.Seller.Validate()
-	if err != nil {
-		return microerror.MaskAny(err)
-	}
-	err = c.Trader.Validate()
 	if err != nil {
 		return microerror.MaskAny(err)
 	}

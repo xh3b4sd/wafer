@@ -11,14 +11,26 @@ func Test_Trader_Runtime_Copy(t *testing.T) {
 	tr := &Trader{}
 
 	r1 := tr.Runtime()
-	if r1.State.Trade.Revenue != 0 {
-		t.Fatal("expected", 0, "got", r1.State.Trade.Revenue)
+	s1 := testSum(r1.State.Trade.Revenues)
+	if s1 != 0 {
+		t.Fatal("expected", 0, "got", s1)
 	}
 
-	r1.State.Trade.Revenue = 23.45
+	r1.State.Trade.Revenues = []float64{23.45}
 
 	r2 := tr.Runtime()
-	if r2.State.Trade.Revenue != 0 {
-		t.Fatal("expected", 0, "got", r2.State.Trade.Revenue)
+	s2 := testSum(r2.State.Trade.Revenues)
+	if s2 != 0 {
+		t.Fatal("expected", 0, "got", s2)
 	}
+}
+
+func testSum(list []float64) float64 {
+	var s float64
+
+	for _, f := range list {
+		s += f
+	}
+
+	return s
 }

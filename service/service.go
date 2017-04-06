@@ -63,11 +63,12 @@ func New(config Config) (*Service, error) {
 	var informerService informer.Informer
 	{
 		informerConfig := csv.DefaultConfig()
-		informerConfig.File.Header.Buy = 1
-		informerConfig.File.Header.Ignore = false
-		informerConfig.File.Header.Sell = 2
-		informerConfig.File.Header.Time = 0
-		informerConfig.File.Path = "/Users/xh3b4sd/go/src/github.com/xh3b4sd/wafer/charts/002/chart.csv"
+		//		informerConfig.File.Header.Buy = 1
+		//		informerConfig.File.Header.Ignore = false
+		//		informerConfig.File.Header.Sell = 2
+		//		informerConfig.File.Header.Time = 0
+		//		informerConfig.File.Path = "/Users/xh3b4sd/go/src/github.com/xh3b4sd/wafer/charts/001/chart.csv"
+		informerConfig.Dir.Path = "/Users/xh3b4sd/go/src/github.com/xh3b4sd/wafer/charts/"
 		informerService, err = csv.New(informerConfig)
 		if err != nil {
 			return nil, microerror.MaskAny(err)

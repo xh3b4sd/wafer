@@ -1,4 +1,4 @@
-package config
+package fee
 
 import (
 	"github.com/juju/errgo"

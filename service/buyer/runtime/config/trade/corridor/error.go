@@ -1,4 +1,4 @@
-package config
+package corridor
 
 import (
 	"github.com/juju/errgo"

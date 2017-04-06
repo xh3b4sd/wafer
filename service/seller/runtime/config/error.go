@@ -4,9 +4,9 @@ import (
 	"github.com/juju/errgo"
 )
 
-var invalidExecutionError = errgo.New("invalid execution")
+var invalidConfigError = errgo.New("invalid config")
 
-// IsInvalidExecution asserts invalidExecutionError.
-func IsInvalidExecution(err error) bool {
-	return errgo.Cause(err) == invalidExecutionError
+// IsInvalidConfig asserts invalidConfigError.
+func IsInvalidConfig(err error) bool {
+	return errgo.Cause(err) == invalidConfigError
 }

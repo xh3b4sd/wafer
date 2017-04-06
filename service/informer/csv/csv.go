@@ -6,9 +6,11 @@ import (
 	microerror "github.com/giantswarm/microkit/error"
 
 	"github.com/xh3b4sd/wafer/service/informer"
+	"github.com/xh3b4sd/wafer/service/informer/csv/runtime"
 	runtimeconfigdir "github.com/xh3b4sd/wafer/service/informer/csv/runtime/config/dir"
 	runtimeconfigfile "github.com/xh3b4sd/wafer/service/informer/csv/runtime/config/file"
 	runtimestatefile "github.com/xh3b4sd/wafer/service/informer/csv/runtime/state/file"
+	stateprice "github.com/xh3b4sd/wafer/service/informer/csv/runtime/state/price"
 )
 
 // Config is the configuration used to create a new informer.
@@ -67,7 +69,21 @@ func New(config Config) (informer.Informer, error) {
 
 	newInformer := &Informer{
 		// Internals.
-		prices: prices,
+		prices:  prices,
+		runtime: runtime.Runtime{},
+	}
+
+	for _, p := range prices {
+		if len(p) < 2 {
+			return nil, microerror.MaskAnyf(invalidConfigError, "chart must contain at least 2 price events")
+		}
+
+		price := stateprice.Price{
+			End:    p[len(p)-1].Time,
+			Events: len(p),
+			Start:  p[0].Time,
+		}
+		newInformer.runtime.State.Prices = append(newInformer.runtime.State.Prices, price)
 	}
 
 	return newInformer, nil
@@ -76,7 +92,8 @@ func New(config Config) (informer.Informer, error) {
 // Informer implements informer.Informer.
 type Informer struct {
 	// Internals.
-	prices [][]informer.Price
+	prices  [][]informer.Price
+	runtime runtime.Runtime
 }
 
 // Prices returns a list of price channels containing price events. These hold
@@ -102,4 +119,8 @@ func (i *Informer) Prices() []chan informer.Price {
 	}()
 
 	return prices
+}
+
+func (i *Informer) Runtime() runtime.Runtime {
+	return i.runtime
 }

@@ -1,4 +1,4 @@
-package config
+package trade
 
 import (
 	"github.com/juju/errgo"

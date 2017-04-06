@@ -14,6 +14,6 @@ type Trade struct {
 	Duration time.Duration
 	// Revenue is the total amount of revenue the seller made so far.
 	Revenue float64
-	// Total is the total number of trades finsihed by the seller.
+	// Total is the total number of sells emitted by the seller.
 	Total int
 }

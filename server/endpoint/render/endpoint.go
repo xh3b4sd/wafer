@@ -143,11 +143,6 @@ func (e *Endpoint) Endpoint() kitendpoint.Endpoint {
 		{
 			config := v1buyer.DefaultConfig()
 			config.Logger = e.logger
-			config.Runtime.Chart.Window = 7 * 24 * time.Hour
-			config.Runtime.Surge.Duration.Min = 20 * time.Minute
-			config.Runtime.Surge.Min = 3.5
-			config.Runtime.Surge.Tolerance = 0.6
-			config.Runtime.Trade.Pause.Min = 5 * time.Hour
 			newBuyer, err = v1buyer.New(config)
 			if err != nil {
 				return nil, microerror.MaskAny(err)
@@ -215,7 +210,7 @@ func (e *Endpoint) Endpoint() kitendpoint.Endpoint {
 		//		}
 		//		e.logger.Log("debug", "rendering finished")
 
-		e.logger.Log("debug", fmt.Sprintf("trader revenue: %.2f", newTrader.Runtime().State.Trade.Revenue))
+		e.logger.Log("debug", fmt.Sprintf("trader revenue: %#v", newTrader.Runtime().State.Trade.Revenues))
 
 		return nil, nil
 	}

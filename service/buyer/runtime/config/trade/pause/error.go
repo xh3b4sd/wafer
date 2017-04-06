@@ -1,4 +1,4 @@
-package config
+package pause
 
 import (
 	"github.com/juju/errgo"

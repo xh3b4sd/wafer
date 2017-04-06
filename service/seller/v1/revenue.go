@@ -11,11 +11,11 @@ import (
 func calculateRevenue(buyPrice, currentPrice, fee float64) float64 {
 	total := currentPrice - buyPrice
 	percentage := total * 100 / buyPrice
-	withoutFee := percentage - fee
+	withFee := percentage - fee
 
-	if math.IsNaN(withoutFee) {
+	if math.IsNaN(withFee) {
 		return 0
 	}
 
-	return withoutFee
+	return withFee
 }

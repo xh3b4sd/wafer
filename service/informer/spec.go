@@ -5,6 +5,8 @@ package informer
 
 import (
 	"time"
+
+	"github.com/xh3b4sd/wafer/service/informer/csv/runtime"
 )
 
 // Price holds information about a statistical event within some market.
@@ -27,4 +29,7 @@ type Informer interface {
 	// consumed beginning with the first channel of the list. Consuming the last
 	// channel of the returned list at first would cause a dead lock.
 	Prices() []chan Price
+	// Runtime returns a copy of information about the current runtime of the
+	// informer.
+	Runtime() runtime.Runtime
 }

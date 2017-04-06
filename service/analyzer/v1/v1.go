@@ -75,6 +75,7 @@ func New(config Config) (analyzer.Analyzer, error) {
 
 		// Internals.
 		analyzeOnce: sync.Once{},
+		mutex:       sync.Mutex{},
 		permutation: newPermutation,
 		runtime: runtime.Runtime{
 			Config: runtimeConfig,
@@ -93,6 +94,7 @@ type Analyzer struct {
 
 	// Internals.
 	analyzeOnce sync.Once
+	mutex       sync.Mutex
 	permutation permutation.Permutation
 	runtime     runtime.Runtime
 }
@@ -107,6 +109,9 @@ func (a *Analyzer) Execute() {
 }
 
 func (a *Analyzer) Runtime() runtime.Runtime {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+
 	return a.runtime
 }
 
@@ -117,6 +122,7 @@ func (a *Analyzer) execute() error {
 	stepDuration := &Duration{}
 
 	var stepCurrent float64
+	a.runtime.State.Informer.Prices = a.informer.Runtime().State.Prices
 	a.runtime.State.Permutation.Max = max
 	a.runtime.State.Permutation.Start = time.Now()
 	a.runtime.State.Permutation.Step.Total = v1permutation.TotalFromMax(max)
@@ -126,8 +132,10 @@ func (a *Analyzer) execute() error {
 		{
 			stepStart = time.Now()
 			stepCurrent++
+			a.mutex.Lock()
 			a.runtime.State.Permutation.Step.Current = stepCurrent
 			a.runtime.State.Permutation.Indizes = indizes
+			a.mutex.Unlock()
 		}
 
 		permConfig, err := a.permutation.ValueFor(indizes)
@@ -143,7 +151,13 @@ func (a *Analyzer) execute() error {
 		{
 			config := v1buyer.DefaultConfig()
 			config.Logger = a.logger
+
+			// We have to set some parts of the configuration to the runtime config of
+			// the analyzer to be able to track the configuration history properly for
+			// the permutation process.
+			runtimeConfig.Buyer.Trade.Concurrent = config.Runtime.Trade.Concurrent
 			config.Runtime = runtimeConfig.Buyer
+
 			newBuyer, err = v1buyer.New(config)
 			if err != nil {
 				return microerror.MaskAny(err)
@@ -158,14 +172,19 @@ func (a *Analyzer) execute() error {
 			if err != nil {
 				return microerror.MaskAny(err)
 			}
-			defer newClient.Close()
 		}
 
 		var newSeller seller.Seller
 		{
 			config := v1seller.DefaultConfig()
 			config.Logger = a.logger
+
+			// We have to set some parts of the configuration to the runtime config of
+			// the analyzer to be able to track the configuration history properly for
+			// the permutation process.
+			runtimeConfig.Seller.Trade.Fee.Min = config.Runtime.Trade.Fee.Min
 			config.Runtime = runtimeConfig.Seller
+
 			newSeller, err = v1seller.New(config)
 			if err != nil {
 				return microerror.MaskAny(err)
@@ -179,7 +198,6 @@ func (a *Analyzer) execute() error {
 			config.Client = newClient
 			config.Informer = a.informer
 			config.Logger = a.logger
-			config.Runtime = runtimeConfig.Trader
 			config.Seller = newSeller
 			newTrader, err = v1trader.New(config)
 			if err != nil {
@@ -192,15 +210,19 @@ func (a *Analyzer) execute() error {
 			return microerror.MaskAny(err)
 		}
 
-		revenue := newTrader.Runtime().State.Trade.Revenue
-		if (len(a.runtime.State.Config.History) == 0 && revenue > 0) || (len(a.runtime.State.Config.History) > 0 && a.runtime.State.Config.History[0].Revenue < revenue) {
+		a.mutex.Lock()
+		cycles := newTrader.Runtime().State.Trade.Cycles
+		revenues := newTrader.Runtime().State.Trade.Revenues
+		if (len(a.runtime.State.Config.History) == 0 && sum(revenues) > 0) || (len(a.runtime.State.Config.History) > 0 && sum(a.runtime.State.Config.History[0].Revenues) < sum(revenues)) {
 			history := statehistory.History{
-				Config:  *runtimeConfig,
-				Indizes: append([]int{}, indizes...), // copy
-				Revenue: revenue,
+				Config:   *runtimeConfig,
+				Cycles:   cycles,
+				Indizes:  append([]int{}, indizes...), // copy
+				Revenues: revenues,
 			}
 			a.runtime.State.Config.History = append([]statehistory.History{history}, a.runtime.State.Config.History...) // prepend
 		}
+		a.mutex.Unlock()
 
 		indizes, err = v1permutation.ShiftIndizes(indizes, max)
 		if err != nil {
@@ -210,9 +232,11 @@ func (a *Analyzer) execute() error {
 		{
 			stepEnd := time.Now()
 			stepDuration.Add(stepEnd.Sub(stepStart))
+			a.mutex.Lock()
 			a.runtime.State.Permutation.Progress = fmt.Sprintf("%.3f", a.runtime.State.Permutation.Step.Current*100/a.runtime.State.Permutation.Step.Total)
 			a.runtime.State.Permutation.Step.Duration = fmt.Sprintf("%.3fs", stepDuration.Average().Seconds())
 			a.runtime.State.Permutation.End = a.eta(stepDuration.Average())
+			a.mutex.Unlock()
 		}
 
 		if reflect.DeepEqual(indizes, zeroIndizes) {
@@ -228,4 +252,14 @@ func (a *Analyzer) eta(stepDuration time.Duration) time.Time {
 	eta := time.Now().Add(dur)
 
 	return eta
+}
+
+func sum(list []float64) float64 {
+	var s float64
+
+	for _, f := range list {
+		s += f
+	}
+
+	return s
 }

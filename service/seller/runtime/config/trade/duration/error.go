@@ -1,4 +1,4 @@
-package config
+package duration
 
 import (
 	"github.com/juju/errgo"

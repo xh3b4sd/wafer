@@ -1,14 +1,13 @@
 package trade
 
 import (
-	"github.com/xh3b4sd/wafer/service/buyer/runtime/state/trade/buy"
 	"github.com/xh3b4sd/wafer/service/buyer/runtime/state/trade/corridor"
-	"github.com/xh3b4sd/wafer/service/informer"
+	"github.com/xh3b4sd/wafer/service/buyer/runtime/state/trade/price"
 )
 
 type Trade struct {
-	Buy      buy.Buy
 	Corridor corridor.Corridor
-	// Price is the current price event which can be used to buy commodities.
-	Price informer.Price
+	Price    price.Price
+	// Concurrent is the number of concurrent buys emitted by the buyer.
+	Concurrent int
 }

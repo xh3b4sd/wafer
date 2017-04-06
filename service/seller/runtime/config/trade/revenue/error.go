@@ -1,4 +1,4 @@
-package config
+package revenue
 
 import (
 	"github.com/juju/errgo"

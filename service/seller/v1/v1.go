@@ -23,13 +23,18 @@ type Config struct {
 // DefaultConfig returns the default configuration used to create a new seller
 // by best effort.
 func DefaultConfig() Config {
-	return Config{
+	runtimeConfig := config.Config{}
+	runtimeConfig.Trade.Fee.Min = 3.0
+
+	config := Config{
 		// Dependencies.
 		Logger: nil,
 
 		// Settings.
-		Runtime: config.Config{},
+		Runtime: runtimeConfig,
 	}
+
+	return config
 }
 
 // New creates a new configured seller.
